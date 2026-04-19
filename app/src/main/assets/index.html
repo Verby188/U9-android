@@ -2246,17 +2246,22 @@ function MultiGame({
   // Charger la liste d'amis (avec retry si U9_USER pas encore prêt)
   const loadFriendsForLobby = () => {
     const user = window.U9_USER;
-    if(!user)return;
+    if(!user||!window.u9Get)return;
     window.u9Get('users/'+user.uid+'/friends').then(data=>{
       if(data)setFriendsList(Object.entries(data));
     });
   };
   useEffect(() => {
-    loadFriendsForLobby();
+    // Vérifier login immédiat ou en attente
+    if(window.U9_USER||window._u9PendingLogin) loadFriendsForLobby();
     const handler = () => setTimeout(loadFriendsForLobby, 300);
     window.addEventListener('u9-logged-in', handler);
     return () => window.removeEventListener('u9-logged-in', handler);
   }, []);
+  // Recharger les amis quand on entre dans le lobby (roomCode défini)
+  useEffect(()=>{
+    if(roomCode) loadFriendsForLobby();
+  },[roomCode]);
   const pid = useRef(getPid());
   const prevStatus = useRef(null);
   const wasMyTurn = useRef(false);
@@ -2987,9 +2992,9 @@ function App() {
   const [nameError, setNameError] = useState(false);
   // Écouter l'event d'authentification
   useEffect(() => {
-    // Pseudo déjà disponible (session restaurée)
-    if(window.U9_USER?.pseudo) setMyName(window.U9_USER.pseudo);
-    // Écouter les connexions futures
+    // Pseudo déjà disponible (session restaurée avant montage)
+    const pseudo = window.U9_USER?.pseudo || window._u9PendingLogin?.pseudo;
+    if(pseudo) setMyName(pseudo);
     const handler = (e) => { if(e.detail?.pseudo) setMyName(e.detail.pseudo); };
     window.addEventListener('u9-logged-in', handler);
     return () => window.removeEventListener('u9-logged-in', handler);
@@ -3315,8 +3320,11 @@ function u9OnLoggedIn(){
   if(window._u9FcmToken)u9UpdateFcmToken(window._u9FcmToken);
   u9EnsureToken();
   if(!window._u9TokenInterval)window._u9TokenInterval=setInterval(u9EnsureToken,1800000);
-  // Notifier React du pseudo via event custom
-  window.dispatchEvent(new CustomEvent('u9-logged-in',{detail:{pseudo:U9_USER.pseudo}}));
+  // Stocker le login en attente + dispatcher avec délai pour laisser React monter
+  window._u9PendingLogin={pseudo:U9_USER.pseudo};
+  setTimeout(()=>{
+    window.dispatchEvent(new CustomEvent('u9-logged-in',{detail:{pseudo:U9_USER.pseudo}}));
+  },400);
 }
 
 function u9HideOverlay(){document.getElementById('u9-auth-overlay').classList.add('hidden');}
