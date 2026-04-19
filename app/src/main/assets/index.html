@@ -483,8 +483,6 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
 <div id="u9-toast"></div>
 
   <div id="root"></div>
-  <button id="fs-btn" onclick="window.goFullscreen()" title="Plein écran"
-    style="position:fixed;bottom:18px;right:16px;z-index:9999;background:rgba(30,41,59,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#e2e8f0;user-select:none;backdrop-filter:blur(4px);box-shadow:0 2px 12px rgba(0,0,0,0.4);">⛶</button>
   <script>
     if(typeof firebase!=='undefined'){firebase.initializeApp({
     apiKey: "AIzaSyCPVnGohf_etSJYIFCSnWxjIB2RPX5rmnU",
@@ -495,20 +493,6 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
     messagingSenderId: "1063280643089",
     appId: "1:1063280643089:web:209c246dbbfaa8772cb5b0"
   });}
-    window.goFullscreen=function(){
-      const el=document.documentElement,btn=document.getElementById('fs-btn');
-      if(document.fullscreenElement||document.webkitFullscreenElement){
-        if(document.exitFullscreen)document.exitFullscreen();
-        else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
-        if(btn)btn.textContent='⛶';
-      }else{
-        if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
-        else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
-        if(btn)btn.textContent='✕';
-      }
-    };
-    document.addEventListener('fullscreenchange',()=>{const b=document.getElementById('fs-btn');if(b)b.textContent=document.fullscreenElement?'✕':'⛶';});
-    document.addEventListener('webkitfullscreenchange',()=>{const b=document.getElementById('fs-btn');if(b)b.textContent=document.webkitFullscreenElement?'✕':'⛶';});
   </script>
   <script>
 const {
@@ -2259,12 +2243,19 @@ function MultiGame({
   const [showYourTurn, setShowYourTurn] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
   const [invitedUids, setInvitedUids] = useState(new Set());
-  // Charger la liste d'amis
-  useEffect(() => {
-    if(!window.U9_USER)return;
-    window.u9Get('users/'+window.U9_USER.uid+'/friends').then(data=>{
+  // Charger la liste d'amis (avec retry si U9_USER pas encore prêt)
+  const loadFriendsForLobby = () => {
+    const user = window.U9_USER;
+    if(!user)return;
+    window.u9Get('users/'+user.uid+'/friends').then(data=>{
       if(data)setFriendsList(Object.entries(data));
     });
+  };
+  useEffect(() => {
+    loadFriendsForLobby();
+    const handler = () => setTimeout(loadFriendsForLobby, 300);
+    window.addEventListener('u9-logged-in', handler);
+    return () => window.removeEventListener('u9-logged-in', handler);
   }, []);
   const pid = useRef(getPid());
   const prevStatus = useRef(null);
@@ -2989,14 +2980,19 @@ function MultiGame({
 // HOME
 // ══════════════════════════════════════════
 function App() {
-  const [mode, setMode] = useState("home"); // home | ai_select | ai | multi
+  const [mode, setMode] = useState("home");
   const [myName, setMyName] = useState("");
   const [numAI, setNumAI] = useState(2);
   const [showRules, setShowRules] = useState(false);
   const [nameError, setNameError] = useState(false);
-  // Auto-remplir le pseudo si connecté
+  // Écouter l'event d'authentification
   useEffect(() => {
-    if(window.U9_USER?.pseudo && !myName) setMyName(window.U9_USER.pseudo);
+    // Pseudo déjà disponible (session restaurée)
+    if(window.U9_USER?.pseudo) setMyName(window.U9_USER.pseudo);
+    // Écouter les connexions futures
+    const handler = (e) => { if(e.detail?.pseudo) setMyName(e.detail.pseudo); };
+    window.addEventListener('u9-logged-in', handler);
+    return () => window.removeEventListener('u9-logged-in', handler);
   }, []);
   function checkName() {
     if (!myName.trim()) {
@@ -3319,17 +3315,8 @@ function u9OnLoggedIn(){
   if(window._u9FcmToken)u9UpdateFcmToken(window._u9FcmToken);
   u9EnsureToken();
   if(!window._u9TokenInterval)window._u9TokenInterval=setInterval(u9EnsureToken,1800000);
-  // Pré-remplir le nom dans le jeu React si possible
-  setTimeout(()=>{
-    const inp=document.querySelector('input[placeholder="Ex : Martin"]')
-      ||document.querySelector('input[placeholder*="prénom"]')
-      ||document.querySelector('input[placeholder*="nom"]');
-    if(inp&&!inp.value&&U9_USER){
-      inp.value=U9_USER.pseudo;
-      inp.dispatchEvent(new Event('input',{bubbles:true}));
-      inp.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-  },1000);
+  // Notifier React du pseudo via event custom
+  window.dispatchEvent(new CustomEvent('u9-logged-in',{detail:{pseudo:U9_USER.pseudo}}));
 }
 
 function u9HideOverlay(){document.getElementById('u9-auth-overlay').classList.add('hidden');}
