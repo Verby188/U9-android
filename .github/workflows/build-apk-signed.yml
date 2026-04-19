@@ -27,6 +27,9 @@ jobs:
         with:
           gradle-version: "8.0"
 
+      - name: Create google-services.json
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
+
       - name: Build Release APK
         run: gradle assembleRelease --no-daemon
 
