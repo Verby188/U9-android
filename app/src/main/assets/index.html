@@ -483,8 +483,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
 <div id="u9-toast"></div>
 
   <div id="root"></div>
-  <button id="fs-btn" onclick="window.goFullscreen()" title="Plein écran"
-    style="position:fixed;bottom:18px;right:16px;z-index:9999;background:rgba(30,41,59,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#e2e8f0;user-select:none;backdrop-filter:blur(4px);box-shadow:0 2px 12px rgba(0,0,0,0.4);">⛶</button>
+  
   <script>
     if(typeof firebase!=='undefined'){firebase.initializeApp({
     apiKey: "AIzaSyCPVnGohf_etSJYIFCSnWxjIB2RPX5rmnU",
@@ -495,20 +494,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
     messagingSenderId: "1063280643089",
     appId: "1:1063280643089:web:209c246dbbfaa8772cb5b0"
   });}
-    window.goFullscreen=function(){
-      const el=document.documentElement,btn=document.getElementById('fs-btn');
-      if(document.fullscreenElement||document.webkitFullscreenElement){
-        if(document.exitFullscreen)document.exitFullscreen();
-        else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
-        if(btn)btn.textContent='⛶';
-      }else{
-        if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
-        else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
-        if(btn)btn.textContent='✕';
-      }
-    };
-    document.addEventListener('fullscreenchange',()=>{const b=document.getElementById('fs-btn');if(b)b.textContent=document.fullscreenElement?'✕':'⛶';});
-    document.addEventListener('webkitfullscreenchange',()=>{const b=document.getElementById('fs-btn');if(b)b.textContent=document.webkitFullscreenElement?'✕':'⛶';});
+    
   </script>
   <script>
 const {
