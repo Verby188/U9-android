@@ -11,6 +11,84 @@
   <link rel="apple-touch-icon" href="icon-192.png"/>
   <meta name="apple-mobile-web-app-title" content="U9"/>
   <title>U9</title>
+  <script src="config.js"></script>
+  <style>
+/* ══ AUTH OVERLAY ══ */
+#u9-auth-overlay{position:fixed;inset:0;z-index:9000;background:linear-gradient(160deg,#0f172a,#1e1b4b);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;gap:1.2rem}
+#u9-auth-overlay.hidden{display:none}
+.u9-logo{font-size:3.5rem;font-weight:900;color:#e8c84a;letter-spacing:-.02em;
+  text-shadow:0 0 30px rgba(232,200,74,.4);animation:u9float 3s ease-in-out infinite}
+@keyframes u9float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.u9-tagline{font-size:.85rem;color:rgba(255,255,255,.4);letter-spacing:.1em}
+.u9-box{background:rgba(255,255,255,.05);border:1px solid rgba(232,200,74,.2);border-radius:20px;
+  padding:1.5rem;width:100%;max-width:360px;display:flex;flex-direction:column;gap:.85rem}
+.u9-tabs{display:flex;gap:.5rem}
+.u9-tab{flex:1;padding:.5rem;border:2px solid rgba(255,255,255,.1);border-radius:10px;
+  background:none;color:rgba(255,255,255,.4);font-size:.82rem;cursor:pointer;transition:.2s;font-weight:600}
+.u9-tab.on{border-color:#e8c84a;color:#e8c84a;background:rgba(232,200,74,.08)}
+.u9-inp{width:100%;padding:.65rem 1rem;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);
+  border-radius:10px;color:#fff;font-size:.95rem;outline:none}
+.u9-inp:focus{border-color:rgba(232,200,74,.5)}
+.u9-err{color:#fca5a5;font-size:.78rem;text-align:center;min-height:1rem}
+.u9-gbtn{padding:.85rem;background:linear-gradient(135deg,#e8c84a,#f5d76e);border:none;border-radius:12px;
+  font-size:.95rem;color:#111;cursor:pointer;font-weight:800;transition:.2s;width:100%}
+.u9-gbtn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(232,200,74,.3)}
+.u9-skip{font-size:.72rem;color:rgba(255,255,255,.3);text-align:center;cursor:pointer;
+  text-decoration:underline;margin-top:.2rem}
+
+/* ══ PROFILE BADGE ══ */
+#u9-profile-badge{position:fixed;top:.7rem;right:.7rem;z-index:8000;display:none;
+  align-items:center;gap:.4rem;background:rgba(15,23,42,.85);border:1px solid rgba(232,200,74,.25);
+  border-radius:20px;padding:.3rem .7rem .3rem .4rem;cursor:pointer;backdrop-filter:blur(6px)}
+#u9-profile-badge .av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:.72rem;font-weight:800}
+#u9-profile-badge .nm{font-size:.75rem;color:rgba(255,255,255,.7);font-weight:600}
+
+/* ══ FRIENDS BTN ══ */
+#u9-friends-btn{position:fixed;top:.7rem;left:.7rem;z-index:8000;display:none;
+  background:rgba(15,23,42,.85);border:1px solid rgba(232,200,74,.25);border-radius:20px;
+  padding:.35rem .8rem;cursor:pointer;font-size:.75rem;color:#e8c84a;backdrop-filter:blur(6px);font-weight:600}
+
+/* ══ FRIENDS MODAL ══ */
+#u9-friends-modal{position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.8);
+  display:none;align-items:center;justify-content:center;padding:1.2rem}
+#u9-friends-modal.show{display:flex}
+.u9-modal-card{background:#0f172a;border:1px solid rgba(232,200,74,.25);border-radius:20px;
+  padding:1.4rem;width:100%;max-width:380px;max-height:80vh;overflow-y:auto;
+  display:flex;flex-direction:column;gap:1rem}
+.u9-modal-title{font-size:1rem;font-weight:800;color:#e8c84a}
+.u9-search-inp{width:100%;padding:.5rem .8rem;background:rgba(255,255,255,.06);
+  border:1.5px solid rgba(255,255,255,.12);border-radius:10px;color:#fff;font-size:.88rem;outline:none}
+.u9-search-inp:focus{border-color:rgba(232,200,74,.4)}
+.u9-friend-row{display:flex;align-items:center;gap:.65rem;padding:.55rem .3rem;
+  border-bottom:1px solid rgba(255,255,255,.05)}
+.u9-friend-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0}
+.u9-friend-name{flex:1;font-size:.88rem;color:#e2e8f0}
+.u9-friend-sub{font-size:.65rem;color:rgba(255,255,255,.35)}
+.u9-fbtn{padding:.28rem .65rem;border-radius:8px;border:1.5px solid rgba(232,200,74,.35);
+  background:none;color:#e8c84a;font-size:.7rem;cursor:pointer;transition:.15s;font-weight:600}
+.u9-fbtn.red{border-color:rgba(239,83,80,.4);color:#ef5350}
+.u9-fbtn.green{border-color:rgba(102,187,106,.4);color:#66bb6a}
+.u9-fbtn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ══ PROFILE MODAL ══ */
+#u9-profile-modal{position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.8);
+  display:none;align-items:center;justify-content:center;padding:1.2rem}
+#u9-profile-modal.show{display:flex}
+
+/* ══ TOAST ══ */
+#u9-toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);z-index:9999;
+  background:rgba(15,23,42,.95);border:1px solid rgba(232,200,74,.3);border-radius:10px;
+  padding:.55rem 1.2rem;font-size:.78rem;color:#fff;pointer-events:none;
+  transition:opacity .3s;opacity:0;white-space:nowrap;font-weight:600}
+
+/* ══ OFFLINE ══ */
+#u9-offline{position:fixed;top:0;left:0;right:0;z-index:9999;background:#b91c1c;
+  color:#fff;font-size:.75rem;text-align:center;padding:.35rem;display:none;font-weight:600}
+#u9-offline.show{display:block}
+  </style>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script>/**
@@ -328,6 +406,82 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
   </style>
 </head>
 <body>
+<div id="u9-offline">📡 Connexion perdue</div>
+
+<!-- AUTH OVERLAY -->
+<div id="u9-auth-overlay">
+  <div class="u9-logo">U9</div>
+  <div class="u9-tagline">UNDER 9 — Stratégie & Psychologie</div>
+  <div class="u9-box">
+    <div class="u9-tabs">
+      <button class="u9-tab on" id="u9-tab-login" onclick="u9SwitchTab('login')">Connexion</button>
+      <button class="u9-tab" id="u9-tab-register" onclick="u9SwitchTab('register')">Inscription</button>
+    </div>
+    <div id="u9-pseudo-row" style="display:none">
+      <input class="u9-inp" id="u9-pseudo" placeholder="Pseudo (ex: Alex)" maxlength="14">
+    </div>
+    <input class="u9-inp" id="u9-email" placeholder="Email" type="email">
+    <input class="u9-inp" id="u9-pwd" placeholder="Mot de passe" type="password">
+    <div class="u9-err" id="u9-err"></div>
+    <button class="u9-gbtn" id="u9-auth-btn" onclick="u9DoAuth()">Se connecter</button>
+    <div class="u9-skip" onclick="u9SkipAuth()">Continuer sans compte</div>
+  </div>
+</div>
+
+<!-- PROFILE BADGE -->
+<div id="u9-profile-badge" onclick="u9ShowProfile()">
+  <div class="av" id="u9-badge-av"></div>
+  <div class="nm" id="u9-badge-nm"></div>
+</div>
+
+<!-- FRIENDS BUTTON -->
+<button id="u9-friends-btn" onclick="u9OpenFriends()">👥 Amis</button>
+
+<!-- FRIENDS MODAL -->
+<div id="u9-friends-modal">
+  <div class="u9-modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="u9-modal-title">👥 Amis</div>
+      <button onclick="u9CloseFriends()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:1.2rem;cursor:pointer">✕</button>
+    </div>
+    <div>
+      <div style="font-size:.68rem;color:rgba(255,255,255,.35);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Ajouter un ami</div>
+      <input class="u9-search-inp" id="u9-friend-search" placeholder="Pseudo de l'ami..." maxlength="14" oninput="u9SearchFriend()">
+      <div id="u9-friend-search-result" style="margin-top:.4rem"></div>
+    </div>
+    <div id="u9-friend-requests-section" style="display:none">
+      <div style="font-size:.68rem;color:rgba(255,255,255,.35);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Demandes reçues</div>
+      <div id="u9-friend-requests-list"></div>
+    </div>
+    <div>
+      <div style="font-size:.68rem;color:rgba(255,255,255,.35);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Mes amis</div>
+      <div id="u9-friends-list"><div style="color:rgba(255,255,255,.3);font-size:.82rem;padding:.3rem">Aucun ami pour l'instant</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div id="u9-profile-modal">
+  <div class="u9-modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="u9-modal-title">Mon profil</div>
+      <button onclick="u9CloseProfile()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:1.2rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:.8rem">
+      <div id="u9-pm-av" style="width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;flex-shrink:0"></div>
+      <div>
+        <div id="u9-pm-pseudo" style="font-size:1rem;font-weight:700;color:#e8c84a"></div>
+        <div id="u9-pm-email" style="font-size:.7rem;color:rgba(255,255,255,.35)"></div>
+      </div>
+    </div>
+    <div id="u9-pm-stats" style="display:flex;gap:.5rem;flex-wrap:wrap"></div>
+    <div id="u9-pm-history" style="font-size:.75rem;color:rgba(255,255,255,.4)"></div>
+    <button class="u9-gbtn" style="background:linear-gradient(135deg,#b91c1c,#ef4444)" onclick="u9Logout()">Se déconnecter</button>
+  </div>
+</div>
+
+<div id="u9-toast"></div>
+
   <div id="root"></div>
   <button id="fs-btn" onclick="window.goFullscreen()" title="Plein écran"
     style="position:fixed;bottom:18px;right:16px;z-index:9999;background:rgba(30,41,59,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#e2e8f0;user-select:none;backdrop-filter:blur(4px);box-shadow:0 2px 12px rgba(0,0,0,0.4);">⛶</button>
@@ -3030,7 +3184,358 @@ root.render(React.createElement(App));
 
   </script>
   <script>
-    if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+// ══════════════════════════════════════════
+// U9 — Auth, Amis, FCM
+// ══════════════════════════════════════════
+const U9_DB  = window.APP_CONFIG?.DB_URL  || 'https://u9-game-default-rtdb.europe-west1.firebasedatabase.app';
+const U9_KEY = window.APP_CONFIG?.FIREBASE_KEY || '';
+const U9_AUTH_URL = 'https://identitytoolkit.googleapis.com/v1/accounts';
+const U9_FCM_WORKER = window.APP_CONFIG?.FCM_WORKER_URL || '';
+const U9_COLORS = ['#e8c84a','#ef5350','#42a5f5','#66bb6a','#ab47bc','#ff7043','#26c6da','#ec407a'];
+const u9pc = i => U9_COLORS[i % U9_COLORS.length];
+
+let U9_USER = null; // {uid, email, pseudo, idToken, refreshToken, tokenExpiry, fcmToken}
+let _u9Friends = {};
+let _u9OnlineInterval = null;
+
+// ── Firebase REST ──
+async function u9Get(path){
+  try{const r=await fetch(U9_DB+'/'+path+'.json');if(!r.ok)return null;return r.json();}catch(e){return null;}
+}
+async function u9Set(path,data){
+  try{await fetch(U9_DB+'/'+path+'.json',{method:'PUT',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});}catch(e){}
+}
+async function u9Del(path){
+  try{await fetch(U9_DB+'/'+path+'.json',{method:'DELETE'});}catch(e){}
+}
+
+// ── Token refresh ──
+async function u9EnsureToken(){
+  if(!U9_USER?.refreshToken)return;
+  if(U9_USER.tokenExpiry&&Date.now()<U9_USER.tokenExpiry-60000)return;
+  try{
+    const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${U9_KEY}`,{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:`grant_type=refresh_token&refresh_token=${U9_USER.refreshToken}`
+    });
+    const d=await r.json();
+    if(d.id_token){U9_USER.idToken=d.id_token;U9_USER.refreshToken=d.refresh_token;U9_USER.tokenExpiry=Date.now()+3600000;
+      const s=JSON.parse(localStorage.getItem('u9_user')||'{}');s.refreshToken=d.refresh_token;localStorage.setItem('u9_user',JSON.stringify(s));}
+  }catch(e){}
+}
+
+// ── Auth Tab ──
+function u9SwitchTab(tab){
+  document.getElementById('u9-tab-login').classList.toggle('on',tab==='login');
+  document.getElementById('u9-tab-register').classList.toggle('on',tab==='register');
+  document.getElementById('u9-pseudo-row').style.display=tab==='register'?'block':'none';
+  document.getElementById('u9-auth-btn').textContent=tab==='login'?'Se connecter':'Créer le compte';
+  document.getElementById('u9-err').textContent='';
+}
+
+async function u9DoAuth(){
+  const isReg=document.getElementById('u9-tab-register').classList.contains('on');
+  const email=document.getElementById('u9-email').value.trim();
+  const pwd=document.getElementById('u9-pwd').value;
+  const pseudo=document.getElementById('u9-pseudo').value.trim();
+  const errEl=document.getElementById('u9-err');
+  errEl.textContent='';
+  if(!email||!pwd){errEl.textContent='Email et mot de passe requis.';return;}
+  if(isReg&&!pseudo){errEl.textContent='Choisis un pseudo.';return;}
+  document.getElementById('u9-auth-btn').textContent='...';
+  try{
+    const url=isReg?`${U9_AUTH_URL}:signUp?key=${U9_KEY}`:`${U9_AUTH_URL}:signInWithPassword?key=${U9_KEY}`;
+    const r=await fetch(url,{method:'POST',body:JSON.stringify({email,password:pwd,returnSecureToken:true}),headers:{'Content-Type':'application/json'}});
+    const d=await r.json();
+    if(d.error){errEl.textContent=u9TranslateErr(d.error.message);document.getElementById('u9-auth-btn').textContent=isReg?'Créer le compte':'Se connecter';return;}
+    if(isReg){
+      const taken=await u9Get('pseudos/'+pseudo.toLowerCase());
+      if(taken){errEl.textContent='Ce pseudo est déjà pris.';document.getElementById('u9-auth-btn').textContent='Créer le compte';return;}
+      await u9Set('users/'+d.localId,{pseudo,email,created:Date.now()});
+      await u9Set('pseudos/'+pseudo.toLowerCase(),d.localId);
+    }
+    const profile=await u9Get('users/'+d.localId)||{};
+    U9_USER={uid:d.localId,email,pseudo:profile.pseudo||pseudo||email.split('@')[0],
+      idToken:d.idToken,refreshToken:d.refreshToken,tokenExpiry:Date.now()+3600000,fcmToken:null};
+    localStorage.setItem('u9_user',JSON.stringify({uid:d.localId,email,pseudo:U9_USER.pseudo,refreshToken:d.refreshToken}));
+    u9OnLoggedIn();
+  }catch(e){errEl.textContent='Erreur réseau. Réessayez.';document.getElementById('u9-auth-btn').textContent=isReg?'Créer le compte':'Se connecter';}
+}
+
+function u9TranslateErr(msg){
+  const m={'EMAIL_NOT_FOUND':'Email introuvable.','INVALID_PASSWORD':'Mot de passe incorrect.','EMAIL_EXISTS':'Email déjà utilisé.',
+    'WEAK_PASSWORD : Password should be at least 6 characters':'Mot de passe trop court (min 6 car.).','INVALID_EMAIL':'Email invalide.',
+    'INVALID_LOGIN_CREDENTIALS':'Email ou mot de passe incorrect.'};
+  return m[msg]||'Erreur: '+msg;
+}
+
+function u9SkipAuth(){U9_USER=null;u9HideOverlay();}
+
+function u9OnLoggedIn(){
+  u9HideOverlay();
+  u9UpdateBadge();
+  document.getElementById('u9-profile-badge').style.display='flex';
+  document.getElementById('u9-friends-btn').style.display='block';
+  u9LoadFriends();
+  u9UpdateOnlineStatus();
+  if(!_u9OnlineInterval)_u9OnlineInterval=setInterval(u9UpdateOnlineStatus,60000);
+  if(window._u9FcmToken)u9UpdateFcmToken(window._u9FcmToken);
+  u9EnsureToken();
+  if(!window._u9TokenInterval)window._u9TokenInterval=setInterval(u9EnsureToken,1800000);
+  // Pré-remplir le nom dans le jeu React si possible
+  setTimeout(()=>{
+    const inp=document.querySelector('input[placeholder*="prénom"],input[placeholder*="nom"],input[placeholder*="pseudo"]');
+    if(inp&&!inp.value&&U9_USER)inp.value=U9_USER.pseudo;
+  },800);
+}
+
+function u9HideOverlay(){document.getElementById('u9-auth-overlay').classList.add('hidden');}
+function u9UpdateBadge(){
+  if(!U9_USER)return;
+  const av=document.getElementById('u9-badge-av');
+  av.textContent=U9_USER.pseudo[0].toUpperCase();av.style.background=u9pc(U9_USER.pseudo.charCodeAt(0)%8);
+  document.getElementById('u9-badge-nm').textContent=U9_USER.pseudo;
+}
+
+// ── Restore session ──
+function u9TryRestoreSession(){
+  const saved=localStorage.getItem('u9_user');
+  if(!saved)return false;
+  try{
+    const u=JSON.parse(saved);
+    U9_USER={uid:u.uid,email:u.email,pseudo:u.pseudo,idToken:null,refreshToken:u.refreshToken||null,tokenExpiry:0,fcmToken:null};
+    u9OnLoggedIn();return true;
+  }catch(e){localStorage.removeItem('u9_user');return false;}
+}
+
+// ── Profile ──
+function u9ShowProfile(){
+  if(!U9_USER)return;
+  document.getElementById('u9-pm-pseudo').textContent=U9_USER.pseudo;
+  document.getElementById('u9-pm-email').textContent=U9_USER.email;
+  const av=document.getElementById('u9-pm-av');
+  av.textContent=U9_USER.pseudo[0].toUpperCase();av.style.background=u9pc(U9_USER.pseudo.charCodeAt(0)%8);
+  // Stats
+  const hist=u9GetHistory();
+  const stats=u9ComputeStats(hist);
+  document.getElementById('u9-pm-stats').innerHTML=`
+    <div style="flex:1;min-width:72px;background:rgba(255,255,255,.06);border-radius:8px;padding:.45rem;text-align:center">
+      <div style="font-size:1.1rem;font-weight:800;color:#e8c84a">${stats.played}</div>
+      <div style="font-size:.6rem;color:rgba(255,255,255,.4)">parties</div></div>
+    <div style="flex:1;min-width:72px;background:rgba(255,255,255,.06);border-radius:8px;padding:.45rem;text-align:center">
+      <div style="font-size:1.1rem;font-weight:800;color:#66bb6a">${stats.wins}</div>
+      <div style="font-size:.6rem;color:rgba(255,255,255,.4)">victoires</div></div>
+    <div style="flex:1;min-width:72px;background:rgba(255,255,255,.06);border-radius:8px;padding:.45rem;text-align:center">
+      <div style="font-size:1.1rem;font-weight:800;color:#e8c84a">${stats.best===Infinity?'—':stats.best}</div>
+      <div style="font-size:.6rem;color:rgba(255,255,255,.4)">record</div></div>`;
+  document.getElementById('u9-profile-modal').classList.add('show');
+}
+function u9CloseProfile(){document.getElementById('u9-profile-modal').classList.remove('show');}
+function u9Logout(){
+  u9CloseProfile();
+  if(_u9OnlineInterval){clearInterval(_u9OnlineInterval);_u9OnlineInterval=null;}
+  U9_USER=null;localStorage.removeItem('u9_user');
+  document.getElementById('u9-profile-badge').style.display='none';
+  document.getElementById('u9-friends-btn').style.display='none';
+  document.getElementById('u9-auth-overlay').classList.remove('hidden');
+}
+
+// ── History/Stats ──
+function u9SaveHistory(result){
+  if(!U9_USER)return;
+  try{
+    const k='u9_history_'+U9_USER.uid;
+    const h=JSON.parse(localStorage.getItem(k)||'[]');
+    h.unshift(result);if(h.length>20)h.splice(20);
+    localStorage.setItem(k,JSON.stringify(h));
+  }catch(e){}
+}
+function u9GetHistory(){
+  if(!U9_USER)return[];
+  try{return JSON.parse(localStorage.getItem('u9_history_'+U9_USER.uid)||'[]');}catch(e){return[];}
+}
+function u9ComputeStats(hist){
+  if(!hist.length)return{played:0,wins:0,best:Infinity};
+  let wins=0,best=Infinity;
+  hist.forEach(h=>{if(h.won)wins++;if(h.score!==undefined&&h.score<best)best=h.score;});
+  return{played:hist.length,wins,best};
+}
+
+// ── Online Status ──
+async function u9UpdateOnlineStatus(){
+  if(!U9_USER)return;
+  await u9Set('users/'+U9_USER.uid+'/lastOnline',Date.now());
+}
+
+// ── Friends ──
+function u9OpenFriends(){document.getElementById('u9-friends-modal').classList.add('show');u9LoadFriends();}
+function u9CloseFriends(){document.getElementById('u9-friends-modal').classList.remove('show');}
+
+async function u9LoadFriends(){
+  if(!U9_USER)return;
+  const data=await u9Get('users/'+U9_USER.uid+'/friends')||{};
+  _u9Friends=data;
+  u9RenderFriends();
+  u9RenderFriendRequests();
+}
+
+async function u9SearchFriend(){
+  const q=document.getElementById('u9-friend-search').value.trim().toLowerCase();
+  const res=document.getElementById('u9-friend-search-result');
+  if(q.length<2){res.innerHTML='';return;}
+  const uid=await u9Get('pseudos/'+q);
+  if(!uid||uid===U9_USER?.uid){res.innerHTML='<div style="color:rgba(255,255,255,.4);font-size:.8rem;padding:.3rem">Aucun résultat</div>';return;}
+  const profile=await u9Get('users/'+uid)||{};
+  const pseudo=profile.pseudo||q;
+  const alreadyFriend=_u9Friends[uid];
+  const existing=U9_USER?await u9Get('users/'+uid+'/friendRequests/'+U9_USER.uid):null;
+  res.innerHTML=`<div class="u9-friend-row">
+    <div class="u9-friend-av" style="background:${u9pc(pseudo.charCodeAt(0)%8)}">${pseudo[0].toUpperCase()}</div>
+    <span class="u9-friend-name">${pseudo}</span>
+    ${alreadyFriend?'<span style="color:rgba(255,255,255,.3);font-size:.75rem">Déjà ami</span>':
+      `<button class="u9-fbtn green" onclick="u9SendFriendRequest('${uid}','${pseudo}')">${existing?'Annuler':'+ Ajouter'}</button>`}
+  </div>`;
+}
+
+async function u9SendFriendRequest(toUid,toPseudo){
+  if(!U9_USER)return;
+  const existing=await u9Get('users/'+toUid+'/friendRequests/'+U9_USER.uid);
+  if(existing){
+    if(confirm('Annuler la demande à '+toPseudo+' ?')){
+      await u9Del('users/'+toUid+'/friendRequests/'+U9_USER.uid);
+      document.getElementById('u9-friend-search-result').innerHTML='<div style="color:rgba(255,255,255,.4);font-size:.8rem;padding:.3rem">Demande annulée.</div>';
+    }return;
+  }
+  await u9Set('users/'+toUid+'/friendRequests/'+U9_USER.uid,{from:U9_USER.pseudo,uid:U9_USER.uid,ts:Date.now()});
+  const token=await u9Get('users/'+toUid+'/fcmToken');
+  if(token)u9SendFCM(token,'Demande d\'ami U9',U9_USER.pseudo+' veut être votre ami !',{type:'friendRequest',senderName:U9_USER.pseudo});
+  document.getElementById('u9-friend-search-result').innerHTML='<div style="color:#66bb6a;font-size:.8rem;padding:.3rem">Demande envoyée !</div>';
+}
+
+async function u9RenderFriendRequests(){
+  if(!U9_USER)return;
+  const reqs=await u9Get('users/'+U9_USER.uid+'/friendRequests')||{};
+  const entries=Object.entries(reqs);
+  const sec=document.getElementById('u9-friend-requests-section');
+  const list=document.getElementById('u9-friend-requests-list');
+  if(!entries.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  list.innerHTML=entries.map(([uid,req])=>`<div class="u9-friend-row">
+    <div class="u9-friend-av" style="background:${u9pc((req.from||'?').charCodeAt(0)%8)}">${(req.from||'?')[0].toUpperCase()}</div>
+    <span class="u9-friend-name">${req.from||uid}</span>
+    <button class="u9-fbtn green" onclick="u9AcceptFriend('${uid}','${req.from}')">✓</button>
+    <button class="u9-fbtn red" onclick="u9DeclineFriend('${uid}','${req.from}')">✗</button>
+  </div>`).join('');
+}
+
+async function u9AcceptFriend(uid,pseudo){
+  if(!U9_USER)return;
+  await u9Set('users/'+U9_USER.uid+'/friends/'+uid,{pseudo,uid,since:Date.now()});
+  await u9Set('users/'+uid+'/friends/'+U9_USER.uid,{pseudo:U9_USER.pseudo,uid:U9_USER.uid,since:Date.now()});
+  await u9Del('users/'+U9_USER.uid+'/friendRequests/'+uid);
+  u9LoadFriends();
+}
+
+async function u9DeclineFriend(uid,pseudo){
+  const token=await u9Get('users/'+uid+'/fcmToken');
+  if(token)u9SendFCM(token,'Demande refusée',U9_USER.pseudo+' a refusé votre demande.',{type:'friendDeclined',senderName:U9_USER.pseudo});
+  await u9Del('users/'+U9_USER.uid+'/friendRequests/'+uid);
+  u9RenderFriendRequests();
+}
+
+async function u9RemoveFriend(uid){
+  if(!confirm('Supprimer cet ami ?'))return;
+  await u9Del('users/'+U9_USER.uid+'/friends/'+uid);
+  await u9Del('users/'+uid+'/friends/'+U9_USER.uid);
+  u9LoadFriends();
+}
+
+async function u9RenderFriends(){
+  const list=document.getElementById('u9-friends-list');
+  const entries=Object.entries(_u9Friends);
+  if(!entries.length){list.innerHTML='<div style="color:rgba(255,255,255,.3);font-size:.82rem;padding:.3rem">Aucun ami pour l\'instant</div>';return;}
+  // Charger statuts
+  const statuses=await Promise.all(entries.map(async([uid])=>{
+    const ts=await u9Get('users/'+uid+'/lastOnline')||0;
+    return Date.now()-ts<120000;
+  }));
+  list.innerHTML=entries.map(([uid,f],i)=>`<div class="u9-friend-row">
+    <div class="u9-friend-av" style="background:${u9pc(f.pseudo.charCodeAt(0)%8)}">${f.pseudo[0].toUpperCase()}</div>
+    <div style="flex:1">
+      <div class="u9-friend-name">${f.pseudo}</div>
+      <div class="u9-friend-sub" style="color:${statuses[i]?'#66bb6a':'rgba(255,255,255,.3)'}">${statuses[i]?'En ligne':'App fermée'}</div>
+    </div>
+    <button class="u9-fbtn red" onclick="u9RemoveFriend('${uid}')">Retirer</button>
+  </div>`).join('');
+  document.getElementById('u9-friends-btn').textContent='👥 Amis ('+entries.length+')';
+}
+
+// ── FCM ──
+async function u9SendFCM(token,title,body,data){
+  if(!U9_FCM_WORKER)return;
+  try{await fetch(U9_FCM_WORKER,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token,title,body:body||'',data:data||{}})});}catch(e){}
+}
+
+async function u9UpdateFcmToken(token){
+  window._u9FcmToken=token;
+  if(!U9_USER)return;
+  U9_USER.fcmToken=token;
+  await u9Set('users/'+U9_USER.uid+'/fcmToken',token);
+}
+
+// Appelé depuis MainActivity
+function onFcmToken(token){u9UpdateFcmToken(token);}
+
+function onFcmMessage(data){
+  try{
+    const d=typeof data==='string'?JSON.parse(data):data;
+    if(d.type==='gameInvite'&&d.code){
+      const from=d.senderName||d.from||'Un ami';
+      if(confirm('Invitation U9 reçue !\nRejoindre la partie de '+from+' ?')){
+        onDeepLinkCode(d.code);
+      }
+    }else if(d.type==='friendRequest'){u9LoadFriends();}
+    else if(d.type==='friendDeclined'){u9Toast((d.senderName||'Quelqu\'un')+' a refusé votre demande.');}
+  }catch(e){}
+}
+
+function onDeepLinkCode(code){
+  // Injecter le code dans le champ "Rejoindre" du jeu React
+  u9Toast('Code reçu : '+code+' — Rejoignez la partie dans le menu multijoueur');
+  // Tenter de remplir le champ code du jeu React
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll('input');
+    for(const inp of inputs){
+      if(inp.maxLength===6||inp.placeholder?.toLowerCase().includes('code')){
+        inp.value=code;inp.dispatchEvent(new Event('input',{bubbles:true}));break;
+      }
+    }
+  },500);
+}
+
+// ── Toast ──
+function u9Toast(msg,duration=3000){
+  const t=document.getElementById('u9-toast');
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},duration);
+}
+
+// ── Offline ──
+function u9InitOffline(){
+  const b=document.getElementById('u9-offline');
+  window.addEventListener('online',()=>b.classList.remove('show'));
+  window.addEventListener('offline',()=>b.classList.add('show'));
+  if(!navigator.onLine)b.classList.add('show');
+}
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded',()=>{
+  u9InitOffline();
+  if(!u9TryRestoreSession()){
+    // Afficher l'overlay auth
+  }
+});
   </script>
 </body>
   </html>
