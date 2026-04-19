@@ -483,7 +483,8 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
 <div id="u9-toast"></div>
 
   <div id="root"></div>
-  
+  <button id="fs-btn" onclick="window.goFullscreen()" title="Plein écran"
+    style="position:fixed;bottom:18px;right:16px;z-index:9999;background:rgba(30,41,59,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#e2e8f0;user-select:none;backdrop-filter:blur(4px);box-shadow:0 2px 12px rgba(0,0,0,0.4);">⛶</button>
   <script>
     if(typeof firebase!=='undefined'){firebase.initializeApp({
     apiKey: "AIzaSyCPVnGohf_etSJYIFCSnWxjIB2RPX5rmnU",
@@ -494,7 +495,20 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
     messagingSenderId: "1063280643089",
     appId: "1:1063280643089:web:209c246dbbfaa8772cb5b0"
   });}
-    
+    window.goFullscreen=function(){
+      const el=document.documentElement,btn=document.getElementById('fs-btn');
+      if(document.fullscreenElement||document.webkitFullscreenElement){
+        if(document.exitFullscreen)document.exitFullscreen();
+        else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
+        if(btn)btn.textContent='⛶';
+      }else{
+        if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
+        else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+        if(btn)btn.textContent='✕';
+      }
+    };
+    document.addEventListener('fullscreenchange',()=>{const b=document.getElementById('fs-btn');if(b)b.textContent=document.fullscreenElement?'✕':'⛶';});
+    document.addEventListener('webkitfullscreenchange',()=>{const b=document.getElementById('fs-btn');if(b)b.textContent=document.webkitFullscreenElement?'✕':'⛶';});
   </script>
   <script>
 const {
@@ -2243,6 +2257,15 @@ function MultiGame({
   const [busy, setBusy] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showYourTurn, setShowYourTurn] = useState(false);
+  const [friendsList, setFriendsList] = useState([]);
+  const [invitedUids, setInvitedUids] = useState(new Set());
+  // Charger la liste d'amis
+  useEffect(() => {
+    if(!window.U9_USER)return;
+    window.u9Get('users/'+window.U9_USER.uid+'/friends').then(data=>{
+      if(data)setFriendsList(Object.entries(data));
+    });
+  }, []);
   const pid = useRef(getPid());
   const prevStatus = useRef(null);
   const wasMyTurn = useRef(false);
@@ -2813,7 +2836,28 @@ function MultiGame({
       color: "#475569",
       marginBottom: 12
     }
-  }, "En attente de l'h\xF4te\u2026"), error && /*#__PURE__*/React.createElement("div", {
+  }, "En attente de l'h\xF4te\u2026"), isHost && friendsList.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {width:"100%",maxWidth:320,marginBottom:16}
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {fontSize:11,color:"#64748b",marginBottom:8,textTransform:"uppercase",letterSpacing:1}
+  }, "\uD83D\uDC65 Inviter un ami"), friendsList.map(([uid, f]) => /*#__PURE__*/React.createElement("div", {
+    key: uid,
+    style: {display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,marginBottom:6,background:"#1e293b",border:"1px solid #334155"}
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {width:28,height:28,borderRadius:"50%",background:"#e8c84a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#111",flexShrink:0}
+  }, (f.pseudo||"?")[0].toUpperCase()), /*#__PURE__*/React.createElement("span", {
+    style: {flex:1,fontSize:13,fontWeight:600,color:"#e2e8f0"}
+  }, f.pseudo||uid), /*#__PURE__*/React.createElement("button", {
+    disabled: invitedUids.has(uid),
+    onClick: async () => {
+      if(!roomCode||invitedUids.has(uid))return;
+      const token = await window.u9Get('users/'+uid+'/fcmToken');
+      if(!token){alert(f.pseudo+" n'a pas activé les notifications.");return;}
+      await window.u9SendFCM(token,'Invitation U9 de '+(window.U9_USER?.pseudo||'Quelqu\'un'),(f.pseudo||uid)+', rejoins ma partie U9 !',{type:'gameInvite',code:roomCode,senderName:window.U9_USER?.pseudo||''});
+      setInvitedUids(prev => new Set([...prev, uid]));
+    },
+    style: {padding:"5px 12px",borderRadius:8,border:"1.5px solid rgba(232,200,74,0.4)",background:"none",color: invitedUids.has(uid)?"#475569":"#e8c84a",fontSize:11,fontWeight:700,cursor:invitedUids.has(uid)?"not-allowed":"pointer",opacity:invitedUids.has(uid)?0.5:1}
+  }, invitedUids.has(uid) ? "Invité ✓" : "Inviter")))), error && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#f87171",
@@ -2950,6 +2994,10 @@ function App() {
   const [numAI, setNumAI] = useState(2);
   const [showRules, setShowRules] = useState(false);
   const [nameError, setNameError] = useState(false);
+  // Auto-remplir le pseudo si connecté
+  useEffect(() => {
+    if(window.U9_USER?.pseudo && !myName) setMyName(window.U9_USER.pseudo);
+  }, []);
   function checkName() {
     if (!myName.trim()) {
       setNameError(true);
@@ -3194,6 +3242,9 @@ async function u9Set(path,data){
 async function u9Del(path){
   try{await fetch(U9_DB+'/'+path+'.json',{method:'DELETE'});}catch(e){}
 }
+// Exposer globalement pour les composants React
+window.u9Get = u9Get;
+window.u9SendFCM = u9SendFCM;
 
 // ── Token refresh ──
 async function u9EnsureToken(){
@@ -3270,9 +3321,15 @@ function u9OnLoggedIn(){
   if(!window._u9TokenInterval)window._u9TokenInterval=setInterval(u9EnsureToken,1800000);
   // Pré-remplir le nom dans le jeu React si possible
   setTimeout(()=>{
-    const inp=document.querySelector('input[placeholder*="prénom"],input[placeholder*="nom"],input[placeholder*="pseudo"]');
-    if(inp&&!inp.value&&U9_USER)inp.value=U9_USER.pseudo;
-  },800);
+    const inp=document.querySelector('input[placeholder="Ex : Martin"]')
+      ||document.querySelector('input[placeholder*="prénom"]')
+      ||document.querySelector('input[placeholder*="nom"]');
+    if(inp&&!inp.value&&U9_USER){
+      inp.value=U9_USER.pseudo;
+      inp.dispatchEvent(new Event('input',{bubbles:true}));
+      inp.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+  },1000);
 }
 
 function u9HideOverlay(){document.getElementById('u9-auth-overlay').classList.add('hidden');}
