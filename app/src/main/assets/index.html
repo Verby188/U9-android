@@ -2246,22 +2246,21 @@ function MultiGame({
   // Charger la liste d'amis (avec retry si U9_USER pas encore prêt)
   const loadFriendsForLobby = () => {
     const user = window.U9_USER;
-    if(!user||!window.u9Get)return;
-    window.u9Get('users/'+user.uid+'/friends').then(data=>{
-      if(data)setFriendsList(Object.entries(data));
-    });
+    if(!user)return;
+    const dbUrl = 'https://u9-game-default-rtdb.europe-west1.firebasedatabase.app';
+    fetch(dbUrl+'/users/'+user.uid+'/friends.json')
+      .then(r=>r.json())
+      .then(data=>{if(data&&typeof data==='object')setFriendsList(Object.entries(data));})
+      .catch(()=>{});
   };
   useEffect(() => {
-    // Vérifier login immédiat ou en attente
-    if(window.U9_USER||window._u9PendingLogin) loadFriendsForLobby();
+    setTimeout(loadFriendsForLobby, 200);
     const handler = () => setTimeout(loadFriendsForLobby, 300);
     window.addEventListener('u9-logged-in', handler);
     return () => window.removeEventListener('u9-logged-in', handler);
   }, []);
-  // Recharger les amis quand on entre dans le lobby (roomCode défini)
-  useEffect(()=>{
-    if(roomCode) loadFriendsForLobby();
-  },[roomCode]);
+  // Recharger les amis quand on entre dans le lobby
+  useEffect(()=>{ if(roomCode) setTimeout(loadFriendsForLobby, 200); },[roomCode]);
   const pid = useRef(getPid());
   const prevStatus = useRef(null);
   const wasMyTurn = useRef(false);
@@ -2847,9 +2846,13 @@ function MultiGame({
     disabled: invitedUids.has(uid),
     onClick: async () => {
       if(!roomCode||invitedUids.has(uid))return;
-      const token = await window.u9Get('users/'+uid+'/fcmToken');
-      if(!token){alert(f.pseudo+" n'a pas activé les notifications.");return;}
-      await window.u9SendFCM(token,'Invitation U9 de '+(window.U9_USER?.pseudo||'Quelqu\'un'),(f.pseudo||uid)+', rejoins ma partie U9 !',{type:'gameInvite',code:roomCode,senderName:window.U9_USER?.pseudo||''});
+      const dbUrl='https://u9-game-default-rtdb.europe-west1.firebasedatabase.app';
+      const r=await fetch(dbUrl+'/users/'+uid+'/fcmToken.json');
+      const token=await r.json();
+      if(!token){alert((f.pseudo||uid)+' n\'a pas activé les notifications.');return;}
+      const workerUrl=(window.APP_CONFIG?.FCM_WORKER_URL)||'';
+      if(workerUrl)await fetch(workerUrl,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({token,title:'Invitation U9 de '+(window.U9_USER?.pseudo||'Quelqu\'un'),body:(f.pseudo||uid)+', rejoins ma partie U9 !',data:{type:'gameInvite',code:roomCode,senderName:window.U9_USER?.pseudo||''}})});
       setInvitedUids(prev => new Set([...prev, uid]));
     },
     style: {padding:"5px 12px",borderRadius:8,border:"1.5px solid rgba(232,200,74,0.4)",background:"none",color: invitedUids.has(uid)?"#475569":"#e8c84a",fontSize:11,fontWeight:700,cursor:invitedUids.has(uid)?"not-allowed":"pointer",opacity:invitedUids.has(uid)?0.5:1}
