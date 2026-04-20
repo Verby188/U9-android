@@ -173,6 +173,18 @@ class MainActivity : AppCompatActivity() {
         if (notifType != null) {
             val code = intent.getStringExtra("code") ?: ""
             val from = intent.getStringExtra("senderName") ?: intent.getStringExtra("from") ?: ""
+
+            // Si c'est une invitation de jeu avec code → rejoindre directement sans confirm()
+            if (notifType == "gameInvite" && code.isNotEmpty()) {
+                if (::webView.isInitialized && webView.url != null) {
+                    injectCode(code)
+                } else {
+                    pendingCode = code
+                }
+                return
+            }
+
+            // Autres types de notification → passer à onFcmMessage
             val data = """{"type":"$notifType","code":"$code","senderName":"$from"}"""
             if (::webView.isInitialized && webView.url != null) {
                 injectNotification(data)
