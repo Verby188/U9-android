@@ -2243,9 +2243,9 @@ function MultiGame({
   const [showYourTurn, setShowYourTurn] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
   const [invitedUids, setInvitedUids] = useState(new Set());
-  // Charger la liste d'amis (avec retry si U9_USER pas encore prêt)
+  // Charger la liste d'amis (avec retry si window.U9_USER pas encore prêt)
   const loadFriendsForLobby = () => {
-    const user = window.U9_USER;
+    const user = window.window.U9_USER;
     if(!user)return;
     const dbUrl = 'https://u9-game-default-rtdb.europe-west1.firebasedatabase.app';
     fetch(dbUrl+'/users/'+user.uid+'/friends.json')
@@ -2982,7 +2982,7 @@ function App() {
   // Écouter l'event d'authentification
   useEffect(() => {
     // Pseudo déjà disponible (session restaurée avant montage)
-    const pseudo = window.U9_USER?.pseudo || window._u9PendingLogin?.pseudo;
+    const pseudo = window.window.U9_USER?.pseudo || window._u9PendingLogin?.pseudo;
     if(pseudo) setMyName(pseudo);
     const handler = (e) => { if(e.detail?.pseudo) setMyName(e.detail.pseudo); };
     window.addEventListener('u9-logged-in', handler);
@@ -3218,7 +3218,7 @@ const U9_FCM_WORKER = window.APP_CONFIG?.FCM_WORKER_URL || '';
 const U9_COLORS = ['#e8c84a','#ef5350','#42a5f5','#66bb6a','#ab47bc','#ff7043','#26c6da','#ec407a'];
 const u9pc = i => U9_COLORS[i % U9_COLORS.length];
 
-let U9_USER = null; // {uid, email, pseudo, idToken, refreshToken, tokenExpiry, fcmToken}
+window.window.U9_USER = null; // {uid, email, pseudo, idToken, refreshToken, tokenExpiry, fcmToken}
 let _u9Friends = {};
 let _u9OnlineInterval = null;
 
@@ -3238,15 +3238,15 @@ window.u9SendFCM = u9SendFCM;
 
 // ── Token refresh ──
 async function u9EnsureToken(){
-  if(!U9_USER?.refreshToken)return;
-  if(U9_USER.tokenExpiry&&Date.now()<U9_USER.tokenExpiry-60000)return;
+  if(!window.U9_USER?.refreshToken)return;
+  if(window.U9_USER.tokenExpiry&&Date.now()<window.U9_USER.tokenExpiry-60000)return;
   try{
     const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${U9_KEY}`,{
       method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:`grant_type=refresh_token&refresh_token=${U9_USER.refreshToken}`
+      body:`grant_type=refresh_token&refresh_token=${window.U9_USER.refreshToken}`
     });
     const d=await r.json();
-    if(d.id_token){U9_USER.idToken=d.id_token;U9_USER.refreshToken=d.refresh_token;U9_USER.tokenExpiry=Date.now()+3600000;
+    if(d.id_token){window.U9_USER.idToken=d.id_token;window.U9_USER.refreshToken=d.refresh_token;window.U9_USER.tokenExpiry=Date.now()+3600000;
       const s=JSON.parse(localStorage.getItem('u9_user')||'{}');s.refreshToken=d.refresh_token;localStorage.setItem('u9_user',JSON.stringify(s));}
   }catch(e){}
 }
@@ -3282,9 +3282,9 @@ async function u9DoAuth(){
       await u9Set('pseudos/'+pseudo.toLowerCase(),d.localId);
     }
     const profile=await u9Get('users/'+d.localId)||{};
-    U9_USER={uid:d.localId,email,pseudo:profile.pseudo||pseudo||email.split('@')[0],
+    window.window.U9_USER={uid:d.localId,email,pseudo:profile.pseudo||pseudo||email.split('@')[0],
       idToken:d.idToken,refreshToken:d.refreshToken,tokenExpiry:Date.now()+3600000,fcmToken:null};
-    localStorage.setItem('u9_user',JSON.stringify({uid:d.localId,email,pseudo:U9_USER.pseudo,refreshToken:d.refreshToken}));
+    localStorage.setItem('u9_user',JSON.stringify({uid:d.localId,email,pseudo:window.window.U9_USER.pseudo,refreshToken:d.refreshToken}));
     u9OnLoggedIn();
   }catch(e){errEl.textContent='Erreur réseau. Réessayez.';document.getElementById('u9-auth-btn').textContent=isReg?'Créer le compte':'Se connecter';}
 }
@@ -3296,7 +3296,7 @@ function u9TranslateErr(msg){
   return m[msg]||'Erreur: '+msg;
 }
 
-function u9SkipAuth(){U9_USER=null;u9HideOverlay();}
+function u9SkipAuth(){window.window.U9_USER=null;u9HideOverlay();}
 
 function u9OnLoggedIn(){
   u9HideOverlay();
@@ -3310,18 +3310,18 @@ function u9OnLoggedIn(){
   u9EnsureToken();
   if(!window._u9TokenInterval)window._u9TokenInterval=setInterval(u9EnsureToken,1800000);
   // Stocker le login en attente + dispatcher avec délai pour laisser React monter
-  window._u9PendingLogin={pseudo:U9_USER.pseudo};
+  window._u9PendingLogin={pseudo:window.U9_USER.pseudo};
   setTimeout(()=>{
-    window.dispatchEvent(new CustomEvent('u9-logged-in',{detail:{pseudo:U9_USER.pseudo}}));
+    window.dispatchEvent(new CustomEvent('u9-logged-in',{detail:{pseudo:window.U9_USER.pseudo}}));
   },400);
 }
 
 function u9HideOverlay(){document.getElementById('u9-auth-overlay').classList.add('hidden');}
 function u9UpdateBadge(){
-  if(!U9_USER)return;
+  if(!window.U9_USER)return;
   const av=document.getElementById('u9-badge-av');
-  av.textContent=U9_USER.pseudo[0].toUpperCase();av.style.background=u9pc(U9_USER.pseudo.charCodeAt(0)%8);
-  document.getElementById('u9-badge-nm').textContent=U9_USER.pseudo;
+  av.textContent=window.U9_USER.pseudo[0].toUpperCase();av.style.background=u9pc(window.U9_USER.pseudo.charCodeAt(0)%8);
+  document.getElementById('u9-badge-nm').textContent=window.U9_USER.pseudo;
 }
 
 // ── Restore session ──
@@ -3330,18 +3330,18 @@ function u9TryRestoreSession(){
   if(!saved)return false;
   try{
     const u=JSON.parse(saved);
-    U9_USER={uid:u.uid,email:u.email,pseudo:u.pseudo,idToken:null,refreshToken:u.refreshToken||null,tokenExpiry:0,fcmToken:null};
+    window.window.U9_USER={uid:u.uid,email:u.email,pseudo:u.pseudo,idToken:null,refreshToken:u.refreshToken||null,tokenExpiry:0,fcmToken:null};
     u9OnLoggedIn();return true;
   }catch(e){localStorage.removeItem('u9_user');return false;}
 }
 
 // ── Profile ──
 function u9ShowProfile(){
-  if(!U9_USER)return;
-  document.getElementById('u9-pm-pseudo').textContent=U9_USER.pseudo;
-  document.getElementById('u9-pm-email').textContent=U9_USER.email;
+  if(!window.U9_USER)return;
+  document.getElementById('u9-pm-pseudo').textContent=window.U9_USER.pseudo;
+  document.getElementById('u9-pm-email').textContent=window.U9_USER.email;
   const av=document.getElementById('u9-pm-av');
-  av.textContent=U9_USER.pseudo[0].toUpperCase();av.style.background=u9pc(U9_USER.pseudo.charCodeAt(0)%8);
+  av.textContent=window.U9_USER.pseudo[0].toUpperCase();av.style.background=u9pc(window.U9_USER.pseudo.charCodeAt(0)%8);
   // Stats
   const hist=u9GetHistory();
   const stats=u9ComputeStats(hist);
@@ -3361,7 +3361,7 @@ function u9CloseProfile(){document.getElementById('u9-profile-modal').classList.
 function u9Logout(){
   u9CloseProfile();
   if(_u9OnlineInterval){clearInterval(_u9OnlineInterval);_u9OnlineInterval=null;}
-  U9_USER=null;localStorage.removeItem('u9_user');
+  window.U9_USER=null;localStorage.removeItem('u9_user');
   document.getElementById('u9-profile-badge').style.display='none';
   document.getElementById('u9-friends-btn').style.display='none';
   document.getElementById('u9-auth-overlay').classList.remove('hidden');
@@ -3369,17 +3369,17 @@ function u9Logout(){
 
 // ── History/Stats ──
 function u9SaveHistory(result){
-  if(!U9_USER)return;
+  if(!window.U9_USER)return;
   try{
-    const k='u9_history_'+U9_USER.uid;
+    const k='u9_history_'+window.U9_USER.uid;
     const h=JSON.parse(localStorage.getItem(k)||'[]');
     h.unshift(result);if(h.length>20)h.splice(20);
     localStorage.setItem(k,JSON.stringify(h));
   }catch(e){}
 }
 function u9GetHistory(){
-  if(!U9_USER)return[];
-  try{return JSON.parse(localStorage.getItem('u9_history_'+U9_USER.uid)||'[]');}catch(e){return[];}
+  if(!window.U9_USER)return[];
+  try{return JSON.parse(localStorage.getItem('u9_history_'+window.U9_USER.uid)||'[]');}catch(e){return[];}
 }
 function u9ComputeStats(hist){
   if(!hist.length)return{played:0,wins:0,best:Infinity};
@@ -3390,8 +3390,8 @@ function u9ComputeStats(hist){
 
 // ── Online Status ──
 async function u9UpdateOnlineStatus(){
-  if(!U9_USER)return;
-  await u9Set('users/'+U9_USER.uid+'/lastOnline',Date.now());
+  if(!window.U9_USER)return;
+  await u9Set('users/'+window.U9_USER.uid+'/lastOnline',Date.now());
 }
 
 // ── Friends ──
@@ -3399,8 +3399,8 @@ function u9OpenFriends(){document.getElementById('u9-friends-modal').classList.a
 function u9CloseFriends(){document.getElementById('u9-friends-modal').classList.remove('show');}
 
 async function u9LoadFriends(){
-  if(!U9_USER)return;
-  const data=await u9Get('users/'+U9_USER.uid+'/friends')||{};
+  if(!window.U9_USER)return;
+  const data=await u9Get('users/'+window.U9_USER.uid+'/friends')||{};
   _u9Friends=data;
   u9RenderFriends();
   u9RenderFriendRequests();
@@ -3411,11 +3411,11 @@ async function u9SearchFriend(){
   const res=document.getElementById('u9-friend-search-result');
   if(q.length<2){res.innerHTML='';return;}
   const uid=await u9Get('pseudos/'+q);
-  if(!uid||uid===U9_USER?.uid){res.innerHTML='<div style="color:rgba(255,255,255,.4);font-size:.8rem;padding:.3rem">Aucun résultat</div>';return;}
+  if(!uid||uid===window.U9_USER?.uid){res.innerHTML='<div style="color:rgba(255,255,255,.4);font-size:.8rem;padding:.3rem">Aucun résultat</div>';return;}
   const profile=await u9Get('users/'+uid)||{};
   const pseudo=profile.pseudo||q;
   const alreadyFriend=_u9Friends[uid];
-  const existing=U9_USER?await u9Get('users/'+uid+'/friendRequests/'+U9_USER.uid):null;
+  const existing=window.U9_USER?await u9Get('users/'+uid+'/friendRequests/'+window.U9_USER.uid):null;
   res.innerHTML=`<div class="u9-friend-row">
     <div class="u9-friend-av" style="background:${u9pc(pseudo.charCodeAt(0)%8)}">${pseudo[0].toUpperCase()}</div>
     <span class="u9-friend-name">${pseudo}</span>
@@ -3425,23 +3425,23 @@ async function u9SearchFriend(){
 }
 
 async function u9SendFriendRequest(toUid,toPseudo){
-  if(!U9_USER)return;
-  const existing=await u9Get('users/'+toUid+'/friendRequests/'+U9_USER.uid);
+  if(!window.U9_USER)return;
+  const existing=await u9Get('users/'+toUid+'/friendRequests/'+window.U9_USER.uid);
   if(existing){
     if(confirm('Annuler la demande à '+toPseudo+' ?')){
-      await u9Del('users/'+toUid+'/friendRequests/'+U9_USER.uid);
+      await u9Del('users/'+toUid+'/friendRequests/'+window.U9_USER.uid);
       document.getElementById('u9-friend-search-result').innerHTML='<div style="color:rgba(255,255,255,.4);font-size:.8rem;padding:.3rem">Demande annulée.</div>';
     }return;
   }
-  await u9Set('users/'+toUid+'/friendRequests/'+U9_USER.uid,{from:U9_USER.pseudo,uid:U9_USER.uid,ts:Date.now()});
+  await u9Set('users/'+toUid+'/friendRequests/'+window.U9_USER.uid,{from:window.U9_USER.pseudo,uid:window.U9_USER.uid,ts:Date.now()});
   const token=await u9Get('users/'+toUid+'/fcmToken');
-  if(token)u9SendFCM(token,'Demande d\'ami U9',U9_USER.pseudo+' veut être votre ami !',{type:'friendRequest',senderName:U9_USER.pseudo});
+  if(token)u9SendFCM(token,'Demande d\'ami U9',window.U9_USER.pseudo+' veut être votre ami !',{type:'friendRequest',senderName:window.U9_USER.pseudo});
   document.getElementById('u9-friend-search-result').innerHTML='<div style="color:#66bb6a;font-size:.8rem;padding:.3rem">Demande envoyée !</div>';
 }
 
 async function u9RenderFriendRequests(){
-  if(!U9_USER)return;
-  const reqs=await u9Get('users/'+U9_USER.uid+'/friendRequests')||{};
+  if(!window.U9_USER)return;
+  const reqs=await u9Get('users/'+window.U9_USER.uid+'/friendRequests')||{};
   const entries=Object.entries(reqs);
   const sec=document.getElementById('u9-friend-requests-section');
   const list=document.getElementById('u9-friend-requests-list');
@@ -3456,24 +3456,24 @@ async function u9RenderFriendRequests(){
 }
 
 async function u9AcceptFriend(uid,pseudo){
-  if(!U9_USER)return;
-  await u9Set('users/'+U9_USER.uid+'/friends/'+uid,{pseudo,uid,since:Date.now()});
-  await u9Set('users/'+uid+'/friends/'+U9_USER.uid,{pseudo:U9_USER.pseudo,uid:U9_USER.uid,since:Date.now()});
-  await u9Del('users/'+U9_USER.uid+'/friendRequests/'+uid);
+  if(!window.U9_USER)return;
+  await u9Set('users/'+window.U9_USER.uid+'/friends/'+uid,{pseudo,uid,since:Date.now()});
+  await u9Set('users/'+uid+'/friends/'+window.U9_USER.uid,{pseudo:window.U9_USER.pseudo,uid:window.U9_USER.uid,since:Date.now()});
+  await u9Del('users/'+window.U9_USER.uid+'/friendRequests/'+uid);
   u9LoadFriends();
 }
 
 async function u9DeclineFriend(uid,pseudo){
   const token=await u9Get('users/'+uid+'/fcmToken');
-  if(token)u9SendFCM(token,'Demande refusée',U9_USER.pseudo+' a refusé votre demande.',{type:'friendDeclined',senderName:U9_USER.pseudo});
-  await u9Del('users/'+U9_USER.uid+'/friendRequests/'+uid);
+  if(token)u9SendFCM(token,'Demande refusée',window.U9_USER.pseudo+' a refusé votre demande.',{type:'friendDeclined',senderName:window.U9_USER.pseudo});
+  await u9Del('users/'+window.U9_USER.uid+'/friendRequests/'+uid);
   u9RenderFriendRequests();
 }
 
 async function u9RemoveFriend(uid){
   if(!confirm('Supprimer cet ami ?'))return;
-  await u9Del('users/'+U9_USER.uid+'/friends/'+uid);
-  await u9Del('users/'+uid+'/friends/'+U9_USER.uid);
+  await u9Del('users/'+window.U9_USER.uid+'/friends/'+uid);
+  await u9Del('users/'+uid+'/friends/'+window.U9_USER.uid);
   u9LoadFriends();
 }
 
@@ -3506,9 +3506,9 @@ async function u9SendFCM(token,title,body,data){
 
 async function u9UpdateFcmToken(token){
   window._u9FcmToken=token;
-  if(!U9_USER)return;
-  U9_USER.fcmToken=token;
-  await u9Set('users/'+U9_USER.uid+'/fcmToken',token);
+  if(!window.U9_USER)return;
+  window.U9_USER.fcmToken=token;
+  await u9Set('users/'+window.U9_USER.uid+'/fcmToken',token);
 }
 
 // Appelé depuis MainActivity
@@ -3562,8 +3562,8 @@ const _u9Invited=new Set();
 
 async function u9RenderLobbyInvite(roomCode){
   const slot=document.getElementById('u9-lobby-invite-slot');
-  if(!slot||!window.U9_USER)return;
-  const data=await fetch(U9_DB_URL+'/users/'+U9_USER.uid+'/friends.json').then(r=>r.json()).catch(()=>null);
+  if(!slot||!window.window.U9_USER)return;
+  const data=await fetch(U9_DB_URL+'/users/'+window.U9_USER.uid+'/friends.json').then(r=>r.json()).catch(()=>null);
   if(!data||typeof data!=='object'||!Object.keys(data).length){
     slot.innerHTML='<div style="font-size:11px;color:#475569;padding:4px 0">Aucun ami pour l\'instant</div>';
     return;
@@ -3591,9 +3591,9 @@ async function u9InviteFriend(uid,pseudo,roomCode){
     if(!token){alert(pseudo+" n'a pas activé les notifications.");if(btn){btn.textContent='Inviter';btn.disabled=false;}return;}
     const workerUrl=window.APP_CONFIG?.FCM_WORKER_URL||'';
     if(workerUrl)await fetch(workerUrl,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token,title:'Invitation U9 de '+(window.U9_USER?.pseudo||'?'),
+      body:JSON.stringify({token,title:'Invitation U9 de '+(window.window.U9_USER?.pseudo||'?'),
         body:pseudo+', rejoins ma partie U9 !',
-        data:{type:'gameInvite',code:roomCode,senderName:window.U9_USER?.pseudo||''}})});
+        data:{type:'gameInvite',code:roomCode,senderName:window.window.U9_USER?.pseudo||''}})});
     _u9Invited.add(uid);
     if(btn){btn.textContent='Invité ✓';btn.style.color='#475569';btn.style.opacity='0.5';}
   }catch(e){if(btn){btn.textContent='Inviter';btn.disabled=false;}}
@@ -3602,7 +3602,7 @@ async function u9InviteFriend(uid,pseudo,roomCode){
 // Observer le DOM pour détecter le slot du lobby
 const _u9Observer=new MutationObserver(()=>{
   const slot=document.getElementById('u9-lobby-invite-slot');
-  if(slot&&!slot.dataset.loaded&&window.U9_USER){
+  if(slot&&!slot.dataset.loaded&&window.window.U9_USER){
     // Le code de salle est stocké dans window._u9CurrentRoom
     const code=window._u9CurrentRoom||'';
     if(code.length>=4){
@@ -3615,13 +3615,13 @@ const _u9Observer=new MutationObserver(()=>{
 // Bouton debug console — visible uniquement dans le lobby
 function u9ShowDebug(){
   const logs=[];
-  logs.push('U9_USER: '+(window.U9_USER?window.U9_USER.pseudo:'NON CONNECTÉ'));
+  logs.push('window.U9_USER: '+(window.window.U9_USER?window.window.U9_USER.pseudo:'NON CONNECTÉ'));
   logs.push('APP_CONFIG: '+(window.APP_CONFIG?JSON.stringify({KEY:window.APP_CONFIG.FIREBASE_KEY?.slice(0,10)+'…',WORKER:window.APP_CONFIG.FCM_WORKER_URL}):'MANQUANT'));
   logs.push('Slot: '+(document.getElementById('u9-lobby-invite-slot')?'TROUVÉ':'ABSENT'));
   logs.push('CurrentRoom: '+(window._u9CurrentRoom||'VIDE'));
   const dbUrl=U9_DB_URL;
-  if(window.U9_USER){
-    fetch(dbUrl+'/users/'+window.U9_USER.uid+'/friends.json')
+  if(window.window.U9_USER){
+    fetch(dbUrl+'/users/'+window.window.U9_USER.uid+'/friends.json')
       .then(r=>r.json()).then(d=>{
         logs.push('Amis Firebase: '+(d?JSON.stringify(Object.keys(d)):'VIDE/NULL'));
         alert(logs.join('\n'));
