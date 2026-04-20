@@ -2245,7 +2245,7 @@ function MultiGame({
   const [invitedUids, setInvitedUids] = useState(new Set());
   // Charger la liste d'amis (avec retry si window.U9_USER pas encore prêt)
   const loadFriendsForLobby = () => {
-    const user = window.window.U9_USER;
+    const user = window.U9_USER;
     if(!user)return;
     const dbUrl = 'https://u9-game-default-rtdb.europe-west1.firebasedatabase.app';
     fetch(dbUrl+'/users/'+user.uid+'/friends.json')
@@ -2982,7 +2982,7 @@ function App() {
   // Écouter l'event d'authentification
   useEffect(() => {
     // Pseudo déjà disponible (session restaurée avant montage)
-    const pseudo = window.window.U9_USER?.pseudo || window._u9PendingLogin?.pseudo;
+    const pseudo = window.U9_USER?.pseudo || window._u9PendingLogin?.pseudo;
     if(pseudo) setMyName(pseudo);
     const handler = (e) => { if(e.detail?.pseudo) setMyName(e.detail.pseudo); };
     window.addEventListener('u9-logged-in', handler);
@@ -3218,7 +3218,7 @@ const U9_FCM_WORKER = window.APP_CONFIG?.FCM_WORKER_URL || '';
 const U9_COLORS = ['#e8c84a','#ef5350','#42a5f5','#66bb6a','#ab47bc','#ff7043','#26c6da','#ec407a'];
 const u9pc = i => U9_COLORS[i % U9_COLORS.length];
 
-window.window.U9_USER = null; // {uid, email, pseudo, idToken, refreshToken, tokenExpiry, fcmToken}
+window.U9_USER = null; // {uid, email, pseudo, idToken, refreshToken, tokenExpiry, fcmToken}
 let _u9Friends = {};
 let _u9OnlineInterval = null;
 
@@ -3282,9 +3282,9 @@ async function u9DoAuth(){
       await u9Set('pseudos/'+pseudo.toLowerCase(),d.localId);
     }
     const profile=await u9Get('users/'+d.localId)||{};
-    window.window.U9_USER={uid:d.localId,email,pseudo:profile.pseudo||pseudo||email.split('@')[0],
+    window.U9_USER={uid:d.localId,email,pseudo:profile.pseudo||pseudo||email.split('@')[0],
       idToken:d.idToken,refreshToken:d.refreshToken,tokenExpiry:Date.now()+3600000,fcmToken:null};
-    localStorage.setItem('u9_user',JSON.stringify({uid:d.localId,email,pseudo:window.window.U9_USER.pseudo,refreshToken:d.refreshToken}));
+    localStorage.setItem('u9_user',JSON.stringify({uid:d.localId,email,pseudo:window.U9_USER.pseudo,refreshToken:d.refreshToken}));
     u9OnLoggedIn();
   }catch(e){errEl.textContent='Erreur réseau. Réessayez.';document.getElementById('u9-auth-btn').textContent=isReg?'Créer le compte':'Se connecter';}
 }
@@ -3296,7 +3296,7 @@ function u9TranslateErr(msg){
   return m[msg]||'Erreur: '+msg;
 }
 
-function u9SkipAuth(){window.window.U9_USER=null;u9HideOverlay();}
+function u9SkipAuth(){window.U9_USER=null;u9HideOverlay();}
 
 function u9OnLoggedIn(){
   u9HideOverlay();
@@ -3330,7 +3330,7 @@ function u9TryRestoreSession(){
   if(!saved)return false;
   try{
     const u=JSON.parse(saved);
-    window.window.U9_USER={uid:u.uid,email:u.email,pseudo:u.pseudo,idToken:null,refreshToken:u.refreshToken||null,tokenExpiry:0,fcmToken:null};
+    window.U9_USER={uid:u.uid,email:u.email,pseudo:u.pseudo,idToken:null,refreshToken:u.refreshToken||null,tokenExpiry:0,fcmToken:null};
     u9OnLoggedIn();return true;
   }catch(e){localStorage.removeItem('u9_user');return false;}
 }
@@ -3528,17 +3528,53 @@ function onFcmMessage(data){
 }
 
 function onDeepLinkCode(code){
-  // Injecter le code dans le champ "Rejoindre" du jeu React
-  u9Toast('Code reçu : '+code+' — Rejoignez la partie dans le menu multijoueur');
-  // Tenter de remplir le champ code du jeu React
-  setTimeout(()=>{
+  window._u9PendingCode=code;
+  // Si on est déjà sur l'écran multi, remplir le champ et cliquer Rejoindre
+  const tryJoin=()=>{
+    // Chercher le champ CODE et le bouton Rejoindre
     const inputs=document.querySelectorAll('input');
+    let codeInput=null;
     for(const inp of inputs){
-      if(inp.maxLength===6||inp.placeholder?.toLowerCase().includes('code')){
-        inp.value=code;inp.dispatchEvent(new Event('input',{bubbles:true}));break;
+      if(inp.placeholder==='CODE'||inp.placeholder?.toLowerCase().includes('code')){
+        codeInput=inp;break;
       }
     }
-  },500);
+    if(codeInput){
+      // Remplir le champ via React synthetic event
+      const nativeInputValueSetter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+      nativeInputValueSetter.call(codeInput,code);
+      codeInput.dispatchEvent(new Event('input',{bubbles:true}));
+      // Cliquer sur le bouton Rejoindre
+      setTimeout(()=>{
+        const btns=document.querySelectorAll('button');
+        for(const b of btns){
+          if(b.textContent.includes('Rejoindre')){b.click();break;}
+        }
+      },200);
+      return true;
+    }
+    return false;
+  };
+  // Naviguer vers le mode multi si besoin, puis rejoindre
+  const btns=document.querySelectorAll('button');
+  let onMultiScreen=false;
+  for(const inp of document.querySelectorAll('input')){
+    if(inp.placeholder==='CODE'){onMultiScreen=true;break;}
+  }
+  if(onMultiScreen){
+    tryJoin();
+  } else {
+    // Cliquer sur "Rejoindre une partie" ou "Créer une partie multi"
+    for(const b of btns){
+      if(b.textContent.includes('Rejoindre une partie')){
+        b.click();
+        setTimeout(tryJoin,400);
+        return;
+      }
+    }
+    // Pas sur le bon écran — stocker et afficher toast
+    u9Toast('Code invitation : '+code+' — Va dans Multijoueur → Rejoindre');
+  }
 }
 
 // ── Toast ──
@@ -3562,7 +3598,7 @@ const _u9Invited=new Set();
 
 async function u9RenderLobbyInvite(roomCode){
   const slot=document.getElementById('u9-lobby-invite-slot');
-  if(!slot||!window.window.U9_USER)return;
+  if(!slot||!window.U9_USER)return;
   const data=await fetch(U9_DB_URL+'/users/'+window.U9_USER.uid+'/friends.json').then(r=>r.json()).catch(()=>null);
   if(!data||typeof data!=='object'||!Object.keys(data).length){
     slot.innerHTML='<div style="font-size:11px;color:#475569;padding:4px 0">Aucun ami pour l\'instant</div>';
@@ -3591,9 +3627,9 @@ async function u9InviteFriend(uid,pseudo,roomCode){
     if(!token){alert(pseudo+" n'a pas activé les notifications.");if(btn){btn.textContent='Inviter';btn.disabled=false;}return;}
     const workerUrl=window.APP_CONFIG?.FCM_WORKER_URL||'';
     if(workerUrl)await fetch(workerUrl,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token,title:'Invitation U9 de '+(window.window.U9_USER?.pseudo||'?'),
+      body:JSON.stringify({token,title:'Invitation U9 de '+(window.U9_USER?.pseudo||'?'),
         body:pseudo+', rejoins ma partie U9 !',
-        data:{type:'gameInvite',code:roomCode,senderName:window.window.U9_USER?.pseudo||''}})});
+        data:{type:'gameInvite',code:roomCode,senderName:window.U9_USER?.pseudo||''}})});
     _u9Invited.add(uid);
     if(btn){btn.textContent='Invité ✓';btn.style.color='#475569';btn.style.opacity='0.5';}
   }catch(e){if(btn){btn.textContent='Inviter';btn.disabled=false;}}
@@ -3602,7 +3638,7 @@ async function u9InviteFriend(uid,pseudo,roomCode){
 // Observer le DOM pour détecter le slot du lobby
 const _u9Observer=new MutationObserver(()=>{
   const slot=document.getElementById('u9-lobby-invite-slot');
-  if(slot&&!slot.dataset.loaded&&window.window.U9_USER){
+  if(slot&&!slot.dataset.loaded&&window.U9_USER){
     // Le code de salle est stocké dans window._u9CurrentRoom
     const code=window._u9CurrentRoom||'';
     if(code.length>=4){
@@ -3615,13 +3651,13 @@ const _u9Observer=new MutationObserver(()=>{
 // Bouton debug console — visible uniquement dans le lobby
 function u9ShowDebug(){
   const logs=[];
-  logs.push('window.U9_USER: '+(window.window.U9_USER?window.window.U9_USER.pseudo:'NON CONNECTÉ'));
+  logs.push('window.U9_USER: '+(window.U9_USER?window.U9_USER.pseudo:'NON CONNECTÉ'));
   logs.push('APP_CONFIG: '+(window.APP_CONFIG?JSON.stringify({KEY:window.APP_CONFIG.FIREBASE_KEY?.slice(0,10)+'…',WORKER:window.APP_CONFIG.FCM_WORKER_URL}):'MANQUANT'));
   logs.push('Slot: '+(document.getElementById('u9-lobby-invite-slot')?'TROUVÉ':'ABSENT'));
   logs.push('CurrentRoom: '+(window._u9CurrentRoom||'VIDE'));
   const dbUrl=U9_DB_URL;
-  if(window.window.U9_USER){
-    fetch(dbUrl+'/users/'+window.window.U9_USER.uid+'/friends.json')
+  if(window.U9_USER){
+    fetch(dbUrl+'/users/'+window.U9_USER.uid+'/friends.json')
       .then(r=>r.json()).then(d=>{
         logs.push('Amis Firebase: '+(d?JSON.stringify(Object.keys(d)):'VIDE/NULL'));
         alert(logs.join('\n'));
@@ -3644,6 +3680,10 @@ window.addEventListener('DOMContentLoaded',()=>{
   _u9Observer.observe(document.getElementById('root')||document.body,{childList:true,subtree:true});
   if(!u9TryRestoreSession()){
     // Afficher l'overlay auth
+  }
+  // Si app lancée via tap notification avec code en attente
+  if(window._u9PendingCode){
+    setTimeout(()=>onDeepLinkCode(window._u9PendingCode),1500);
   }
 });
   </script>
