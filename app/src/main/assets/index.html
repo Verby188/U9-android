@@ -2831,32 +2831,9 @@ function MultiGame({
       color: "#475569",
       marginBottom: 12
     }
-  }, "En attente de l'h\xF4te\u2026"), isHost && friendsList.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {width:"100%",maxWidth:320,marginBottom:16}
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {fontSize:11,color:"#64748b",marginBottom:8,textTransform:"uppercase",letterSpacing:1}
-  }, "\uD83D\uDC65 Inviter un ami"), friendsList.map(([uid, f]) => /*#__PURE__*/React.createElement("div", {
-    key: uid,
-    style: {display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,marginBottom:6,background:"#1e293b",border:"1px solid #334155"}
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {width:28,height:28,borderRadius:"50%",background:"#e8c84a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#111",flexShrink:0}
-  }, (f.pseudo||"?")[0].toUpperCase()), /*#__PURE__*/React.createElement("span", {
-    style: {flex:1,fontSize:13,fontWeight:600,color:"#e2e8f0"}
-  }, f.pseudo||uid), /*#__PURE__*/React.createElement("button", {
-    disabled: invitedUids.has(uid),
-    onClick: async () => {
-      if(!roomCode||invitedUids.has(uid))return;
-      const dbUrl='https://u9-game-default-rtdb.europe-west1.firebasedatabase.app';
-      const r=await fetch(dbUrl+'/users/'+uid+'/fcmToken.json');
-      const token=await r.json();
-      if(!token){alert((f.pseudo||uid)+' n\'a pas activé les notifications.');return;}
-      const workerUrl=(window.APP_CONFIG?.FCM_WORKER_URL)||'';
-      if(workerUrl)await fetch(workerUrl,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({token,title:'Invitation U9 de '+(window.U9_USER?.pseudo||'Quelqu\'un'),body:(f.pseudo||uid)+', rejoins ma partie U9 !',data:{type:'gameInvite',code:roomCode,senderName:window.U9_USER?.pseudo||''}})});
-      setInvitedUids(prev => new Set([...prev, uid]));
-    },
-    style: {padding:"5px 12px",borderRadius:8,border:"1.5px solid rgba(232,200,74,0.4)",background:"none",color: invitedUids.has(uid)?"#475569":"#e8c84a",fontSize:11,fontWeight:700,cursor:invitedUids.has(uid)?"not-allowed":"pointer",opacity:invitedUids.has(uid)?0.5:1}
-  }, invitedUids.has(uid) ? "Invité ✓" : "Inviter")))), error && /*#__PURE__*/React.createElement("div", {
+  }, "En attente de l'h\xF4te\u2026"), isHost && /*#__PURE__*/React.createElement("div", {
+    id:"u9-lobby-invite-slot",style:{width:"100%",maxWidth:320,marginBottom:8}
+  }), error && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "#f87171",
@@ -3570,9 +3547,64 @@ function u9InitOffline(){
   if(!navigator.onLine)b.classList.add('show');
 }
 
+// ── Invite amis dans le lobby U9 (JS pur, indépendant de React) ──
+const U9_DB_URL='https://u9-game-default-rtdb.europe-west1.firebasedatabase.app';
+const _u9Invited=new Set();
+
+async function u9RenderLobbyInvite(roomCode){
+  const slot=document.getElementById('u9-lobby-invite-slot');
+  if(!slot||!window.U9_USER)return;
+  const data=await fetch(U9_DB_URL+'/users/'+U9_USER.uid+'/friends.json').then(r=>r.json()).catch(()=>null);
+  if(!data||typeof data!=='object'||!Object.keys(data).length){return;}
+  const entries=Object.entries(data);
+  slot.innerHTML=`
+    <div style="font-size:11px;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">👥 Inviter un ami</div>
+    ${entries.map(([uid,f])=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;margin-bottom:6px;background:#1e293b;border:1px solid #334155">
+        <div style="width:28px;height:28px;border-radius:50%;background:#e8c84a;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#111;flex-shrink:0">${(f.pseudo||'?')[0].toUpperCase()}</div>
+        <div style="flex:1;font-size:13px;font-weight:600;color:#e2e8f0">${f.pseudo||uid}</div>
+        <button id="u9-inv-${uid}" onclick="u9InviteFriend('${uid}','${(f.pseudo||uid).replace(/'/g,"\\'")}','${roomCode}')"
+          style="padding:5px 12px;border-radius:8px;border:1.5px solid rgba(232,200,74,0.4);background:none;color:#e8c84a;font-size:11px;font-weight:700;cursor:pointer">
+          Inviter
+        </button>
+      </div>`).join('')}`;
+}
+
+async function u9InviteFriend(uid,pseudo,roomCode){
+  if(_u9Invited.has(uid))return;
+  const btn=document.getElementById('u9-inv-'+uid);
+  if(btn){btn.textContent='...';btn.disabled=true;}
+  try{
+    const token=await fetch(U9_DB_URL+'/users/'+uid+'/fcmToken.json').then(r=>r.json());
+    if(!token){alert(pseudo+" n'a pas activé les notifications.");if(btn){btn.textContent='Inviter';btn.disabled=false;}return;}
+    const workerUrl=window.APP_CONFIG?.FCM_WORKER_URL||'';
+    if(workerUrl)await fetch(workerUrl,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token,title:'Invitation U9 de '+(window.U9_USER?.pseudo||'?'),
+        body:pseudo+', rejoins ma partie U9 !',
+        data:{type:'gameInvite',code:roomCode,senderName:window.U9_USER?.pseudo||''}})});
+    _u9Invited.add(uid);
+    if(btn){btn.textContent='Invité ✓';btn.style.color='#475569';btn.style.opacity='0.5';}
+  }catch(e){if(btn){btn.textContent='Inviter';btn.disabled=false;}}
+}
+
+// Observer le DOM pour détecter le slot du lobby
+const _u9Observer=new MutationObserver(()=>{
+  const slot=document.getElementById('u9-lobby-invite-slot');
+  if(slot&&!slot.dataset.loaded&&window.U9_USER){
+    // Trouver le code de salle dans le DOM React
+    const codeEl=document.querySelector('[style*="monospace"]');
+    const code=(codeEl?.textContent||'').trim();
+    if(code.length>=4){
+      slot.dataset.loaded='1';
+      u9RenderLobbyInvite(code);
+    }
+  }
+});
+
 // ── INIT ──
 window.addEventListener('DOMContentLoaded',()=>{
   u9InitOffline();
+  _u9Observer.observe(document.getElementById('root')||document.body,{childList:true,subtree:true});
   if(!u9TryRestoreSession()){
     // Afficher l'overlay auth
   }
