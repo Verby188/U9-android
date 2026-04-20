@@ -2396,41 +2396,34 @@ function MultiGame({
       setError("Entre le code");
       return;
     }
+    await joinRoomByCode(inputCode.toUpperCase().trim());
+  }
+
+  async function joinRoomByCode(code) {
     setError("");
     setBusy(true);
     try {
-      const code = inputCode.toUpperCase().trim();
       const snap = await db().ref(`rooms/${code}`).once('value');
-      if (!snap.exists()) {
-        setError("Salle introuvable");
-        setBusy(false);
-        return;
-      }
+      if (!snap.exists()) { setError("Salle introuvable"); setBusy(false); return; }
       const data = snap.val();
-      if (data.status !== "lobby") {
-        setError("Partie déjà lancée");
-        setBusy(false);
-        return;
-      }
-      if ((data.playerOrder || []).length >= 8) {
-        setError("Salle pleine (8 max)");
-        setBusy(false);
-        return;
-      }
+      if (data.status !== "lobby") { setError("Partie déjà lancée"); setBusy(false); return; }
+      if ((data.playerOrder || []).length >= 8) { setError("Salle pleine (8 max)"); setBusy(false); return; }
       const myPid = pid.current;
       const ord = arr(data.playerOrder);
       const u = {};
-      u[`players/${myPid}`] = {
-        name: myName.trim()
-      };
+      u[`players/${myPid}`] = { name: myName.trim() };
       if (!ord.includes(myPid)) u['playerOrder'] = [...ord, myPid];
       await db().ref(`rooms/${code}`).update(u);
       setRoomCode(code);
-    } catch (e) {
-      setError("Erreur réseau");
-    }
+    } catch (e) { setError("Erreur réseau"); }
     setBusy(false);
   }
+
+  // Exposer globalement pour les invitations depuis notifications
+  useEffect(() => {
+    window._u9JoinRoomByCode = joinRoomByCode;
+    return () => { window._u9JoinRoomByCode = null; };
+  });
   async function startGame() {
     if (!room) return;
     const ord = arr(room.playerOrder);
@@ -3331,7 +3324,14 @@ function u9TryRestoreSession(){
   try{
     const u=JSON.parse(saved);
     window.U9_USER={uid:u.uid,email:u.email,pseudo:u.pseudo,idToken:null,refreshToken:u.refreshToken||null,tokenExpiry:0,fcmToken:null};
-    u9OnLoggedIn();return true;
+    u9OnLoggedIn();
+    // Traiter le code en attente après restauration de session
+    if(window._u9PendingCode){
+      const code=window._u9PendingCode;
+      window._u9PendingCode=null;
+      setTimeout(()=>onDeepLinkCode(code),800);
+    }
+    return true;
   }catch(e){localStorage.removeItem('u9_user');return false;}
 }
 
@@ -3527,53 +3527,36 @@ function onFcmMessage(data){
   }catch(e){}
 }
 
-function onDeepLinkCode(code){
-  window._u9PendingCode=code;
-  // Si on est déjà sur l'écran multi, remplir le champ et cliquer Rejoindre
-  const tryJoin=()=>{
-    // Chercher le champ CODE et le bouton Rejoindre
-    const inputs=document.querySelectorAll('input');
-    let codeInput=null;
-    for(const inp of inputs){
-      if(inp.placeholder==='CODE'||inp.placeholder?.toLowerCase().includes('code')){
-        codeInput=inp;break;
-      }
-    }
-    if(codeInput){
-      // Remplir le champ via React synthetic event
-      const nativeInputValueSetter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
-      nativeInputValueSetter.call(codeInput,code);
-      codeInput.dispatchEvent(new Event('input',{bubbles:true}));
-      // Cliquer sur le bouton Rejoindre
-      setTimeout(()=>{
-        const btns=document.querySelectorAll('button');
-        for(const b of btns){
-          if(b.textContent.includes('Rejoindre')){b.click();break;}
-        }
-      },200);
-      return true;
-    }
-    return false;
-  };
-  // Naviguer vers le mode multi si besoin, puis rejoindre
-  const btns=document.querySelectorAll('button');
-  let onMultiScreen=false;
-  for(const inp of document.querySelectorAll('input')){
-    if(inp.placeholder==='CODE'){onMultiScreen=true;break;}
+function onDeepLinkCode(code, attempt){
+  attempt = attempt||0;
+  window._u9PendingCode = code;
+
+  // Si MultiGame est monté et expose _u9JoinRoomByCode → rejoindre directement
+  if(typeof window._u9JoinRoomByCode === 'function'){
+    window._u9JoinRoomByCode(code);
+    window._u9PendingCode = null;
+    return;
   }
-  if(onMultiScreen){
-    tryJoin();
-  } else {
-    // Cliquer sur "Rejoindre une partie" ou "Créer une partie multi"
-    for(const b of btns){
-      if(b.textContent.includes('Rejoindre une partie')){
-        b.click();
-        setTimeout(tryJoin,400);
-        return;
+
+  // MultiGame pas encore monté → naviguer vers le mode multi d'abord
+  const btns = document.querySelectorAll('button');
+  for(const b of btns){
+    if(b.textContent.includes('Rejoindre une partie')||b.textContent.includes('Créer une partie')){
+      // Cliquer "Rejoindre une partie" pour aller sur l'écran multi
+      for(const b2 of btns){
+        if(b2.textContent.includes('Rejoindre une partie')){b2.click();break;}
       }
+      setTimeout(()=>onDeepLinkCode(code, attempt+1), 500);
+      return;
     }
-    // Pas sur le bon écran — stocker et afficher toast
-    u9Toast('Code invitation : '+code+' — Va dans Multijoueur → Rejoindre');
+  }
+
+  // Retry jusqu'à 15 fois (~9 secondes) — couvre le démarrage à froid
+  if(attempt < 15){
+    setTimeout(()=>onDeepLinkCode(code, attempt+1), 600);
+  } else {
+    u9Toast('Invitation : code '+code+' — rejoins manuellement');
+    window._u9PendingCode = null;
   }
 }
 
@@ -3679,11 +3662,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   u9InitOffline();
   _u9Observer.observe(document.getElementById('root')||document.body,{childList:true,subtree:true});
   if(!u9TryRestoreSession()){
-    // Afficher l'overlay auth
-  }
-  // Si app lancée via tap notification avec code en attente
-  if(window._u9PendingCode){
-    setTimeout(()=>onDeepLinkCode(window._u9PendingCode),1500);
+    // Pas de session → afficher l'overlay auth
+    // Si code en attente, le garder pour après connexion
   }
 });
   </script>
