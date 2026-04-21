@@ -3696,9 +3696,17 @@ window.u9ShowDebug=u9ShowDebug;
 window.addEventListener('DOMContentLoaded',()=>{
   u9InitOffline();
   _u9Observer.observe(document.getElementById('root')||document.body,{childList:true,subtree:true});
+
+  // Lire le code depuis le hash de l'URL (#invite=CODE) — passé par MainActivity
+  const hash=window.location.hash;
+  if(hash.startsWith('#invite=')){
+    const code=hash.slice(8).trim();
+    if(code.length>=4) window._u9PendingCode=code;
+  }
+
   if(!u9TryRestoreSession()){
-    // Pas de session → afficher l'overlay auth
-    // Si code en attente, le garder pour après connexion
+    // Pas de session → overlay auth
+    // Si code en attente, sera traité après connexion
   }
 });
   </script>
