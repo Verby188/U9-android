@@ -2261,6 +2261,14 @@ function MultiGame({
   }, []);
   // Recharger les amis quand on entre dans le lobby
   useEffect(()=>{ if(roomCode) setTimeout(loadFriendsForLobby, 200); },[roomCode]);
+  // Auto-rejoindre si code en attente (invitation notification)
+  useEffect(() => {
+    if(window._u9PendingCode){
+      const code = window._u9PendingCode;
+      window._u9PendingCode = null;
+      joinRoomByCode(code);
+    }
+  }, []);
   const pid = useRef(getPid());
   const prevStatus = useRef(null);
   const wasMyTurn = useRef(false);
@@ -2972,13 +2980,20 @@ function App() {
   const [numAI, setNumAI] = useState(2);
   const [showRules, setShowRules] = useState(false);
   const [nameError, setNameError] = useState(false);
+  // Exposer setMode globalement pour navigation externe
+  useEffect(() => { window._u9SetMode = setMode; return ()=>{window._u9SetMode=null;}; });
   // Écouter l'event d'authentification
   useEffect(() => {
-    // Pseudo déjà disponible (session restaurée avant montage)
     const pseudo = window.U9_USER?.pseudo || window._u9PendingLogin?.pseudo;
     if(pseudo) setMyName(pseudo);
-    const handler = (e) => { if(e.detail?.pseudo) setMyName(e.detail.pseudo); };
+    const handler = (e) => {
+      if(e.detail?.pseudo) setMyName(e.detail.pseudo);
+      // Si code en attente → naviguer vers multi dès que le pseudo est connu
+      if(window._u9PendingCode) setMode("multi");
+    };
     window.addEventListener('u9-logged-in', handler);
+    // Code en attente dès le montage
+    if(window._u9PendingCode && (pseudo||window.U9_USER)) setMode("multi");
     return () => window.removeEventListener('u9-logged-in', handler);
   }, []);
   function checkName() {
@@ -3531,29 +3546,23 @@ function onDeepLinkCode(code, attempt){
   attempt = attempt||0;
   window._u9PendingCode = code;
 
-  // Si MultiGame est monté et expose _u9JoinRoomByCode → rejoindre directement
+  // Si MultiGame est déjà monté → rejoindre directement
   if(typeof window._u9JoinRoomByCode === 'function'){
     window._u9JoinRoomByCode(code);
     window._u9PendingCode = null;
     return;
   }
 
-  // MultiGame pas encore monté → naviguer vers le mode multi d'abord
-  const btns = document.querySelectorAll('button');
-  for(const b of btns){
-    if(b.textContent.includes('Rejoindre une partie')||b.textContent.includes('Créer une partie')){
-      // Cliquer "Rejoindre une partie" pour aller sur l'écran multi
-      for(const b2 of btns){
-        if(b2.textContent.includes('Rejoindre une partie')){b2.click();break;}
-      }
-      setTimeout(()=>onDeepLinkCode(code, attempt+1), 500);
-      return;
-    }
+  // Naviguer vers le mode multi (monte MultiGame qui lira _u9PendingCode)
+  if(typeof window._u9SetMode === 'function'){
+    window._u9SetMode('multi');
+    // MultiGame va se monter et lire _u9PendingCode via son useEffect
+    return;
   }
 
-  // Retry jusqu'à 15 fois (~9 secondes) — couvre le démarrage à froid
-  if(attempt < 15){
-    setTimeout(()=>onDeepLinkCode(code, attempt+1), 600);
+  // React pas encore prêt → retry
+  if(attempt < 20){
+    setTimeout(()=>onDeepLinkCode(code, attempt+1), 500);
   } else {
     u9Toast('Invitation : code '+code+' — rejoins manuellement');
     window._u9PendingCode = null;
