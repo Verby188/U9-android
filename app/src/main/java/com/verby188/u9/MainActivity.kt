@@ -45,6 +45,13 @@ class MainActivity : AppCompatActivity() {
 
         MobileAds.initialize(this)
 
+        // Extraire le code d'invitation AVANT de charger la WebView
+        val notifType = intent?.getStringExtra("type")
+        if (notifType == "gameInvite") {
+            val code = intent?.getStringExtra("code") ?: ""
+            if (code.isNotEmpty()) pendingCode = code
+        }
+
         // Permission notifications Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
@@ -130,22 +137,6 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
                 getFcmTokenAndInject()
-
-                // Injecter le code IMMÉDIATEMENT comme variable globale
-                // avant même que React soit monté
-                pendingCode?.let { code ->
-                    webView.evaluateJavascript(
-                        "window._u9PendingCode='$code';", null
-                    )
-                    // Appeler onDeepLinkCode après que React soit monté
-                    webView.postDelayed({
-                        webView.evaluateJavascript(
-                            "if(typeof onDeepLinkCode==='function')onDeepLinkCode('$code',0);", null
-                        )
-                    }, 2000)
-                    pendingCode = null
-                }
-
                 pendingNotifData?.let { data ->
                     injectNotification(data)
                     pendingNotifData = null
@@ -153,7 +144,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        webView.loadUrl("file:///android_asset/index.html")
+        // Charger la page — le code sera passé via hash si disponible dès le départ
+        val startUrl = if (pendingCode != null) {
+            val code = pendingCode!!
+            pendingCode = null
+            "file:///android_asset/index.html#invite=$code"
+        } else {
+            "file:///android_asset/index.html"
+        }
+        webView.loadUrl(startUrl)
         adView.loadAd(AdRequest.Builder().build())
 
         handleIntent(intent)
@@ -180,23 +179,20 @@ class MainActivity : AppCompatActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
 
-        // Notification FCM
         val notifType = intent.getStringExtra("type")
         if (notifType != null) {
             val code = intent.getStringExtra("code") ?: ""
             val from = intent.getStringExtra("senderName") ?: intent.getStringExtra("from") ?: ""
 
-            // Si c'est une invitation de jeu avec code → rejoindre directement sans confirm()
             if (notifType == "gameInvite" && code.isNotEmpty()) {
+                // App ouverte → injecter directement
                 if (::webView.isInitialized && webView.url != null) {
                     injectCode(code)
-                } else {
-                    pendingCode = code
                 }
+                // App fermée → pendingCode déjà utilisé dans loadUrl avant handleIntent
                 return
             }
 
-            // Autres types de notification → passer à onFcmMessage
             val data = """{"type":"$notifType","code":"$code","senderName":"$from"}"""
             if (::webView.isInitialized && webView.url != null) {
                 injectNotification(data)
