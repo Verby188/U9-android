@@ -482,6 +482,29 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
 
 <div id="u9-toast"></div>
 
+<!-- Bannière d'invitation in-app -->
+<div id="u9-invite-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;
+  background:linear-gradient(135deg,#1e293b,#0f172a);border-bottom:2px solid #e8c84a;
+  padding:.9rem 1.2rem;animation:u9slideDown .3s ease">
+  <div style="display:flex;align-items:center;gap:.8rem;max-width:420px;margin:0 auto">
+    <div style="font-size:1.6rem">🃏</div>
+    <div style="flex:1">
+      <div id="u9-invite-title" style="font-size:.85rem;font-weight:700;color:#e8c84a"></div>
+      <div id="u9-invite-sub" style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:1px"></div>
+    </div>
+    <button id="u9-invite-accept" onclick="window._u9AcceptInvite&&window._u9AcceptInvite()"
+      style="padding:.45rem 1rem;background:#e8c84a;border:none;border-radius:8px;
+      font-size:.78rem;font-weight:800;color:#111;cursor:pointer;white-space:nowrap">
+      Rejoindre
+    </button>
+    <button onclick="document.getElementById('u9-invite-banner').style.display='none'"
+      style="background:none;border:none;color:rgba(255,255,255,.3);font-size:1.1rem;cursor:pointer;padding:0 .2rem">✕</button>
+  </div>
+</div>
+<style>
+@keyframes u9slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+</style>
+
   <div id="root"></div>
   <script>
     if(typeof firebase!=='undefined'){firebase.initializeApp({
@@ -3533,9 +3556,16 @@ function onFcmMessage(data){
   try{
     const d=typeof data==='string'?JSON.parse(data):data;
     if(d.type==='gameInvite'&&d.code){
-      const from=d.senderName||d.from||'Un ami';
-      if(confirm('Invitation U9 reçue !\nRejoindre la partie de '+from+' ?')){
-        onDeepLinkCode(d.code);
+      const from=d.senderName||'Un ami';
+      // App ouverte → bannière in-app
+      const banner=document.getElementById('u9-invite-banner');
+      if(banner){
+        document.getElementById('u9-invite-title').textContent='Invitation de '+from;
+        document.getElementById('u9-invite-sub').textContent='Rejoins la partie U9 maintenant !';
+        window._u9AcceptInvite=()=>{banner.style.display='none';onDeepLinkCode(d.code,0);};
+        banner.style.display='block';
+        clearTimeout(banner._t);
+        banner._t=setTimeout(()=>{banner.style.display='none';},15000);
       }
     }else if(d.type==='friendRequest'){u9LoadFriends();}
     else if(d.type==='friendDeclined'){u9Toast((d.senderName||'Quelqu\'un')+' a refusé votre demande.');}
@@ -3543,29 +3573,25 @@ function onFcmMessage(data){
 }
 
 function onDeepLinkCode(code, attempt){
-  attempt = attempt||0;
-  window._u9PendingCode = code;
-
-  // Si MultiGame est déjà monté → rejoindre directement
-  if(typeof window._u9JoinRoomByCode === 'function'){
+  attempt=attempt||0;
+  window._u9PendingCode=code;
+  // 1. MultiGame monté → rejoindre directement
+  if(typeof window._u9JoinRoomByCode==='function'){
     window._u9JoinRoomByCode(code);
-    window._u9PendingCode = null;
+    window._u9PendingCode=null;
     return;
   }
-
-  // Naviguer vers le mode multi (monte MultiGame qui lira _u9PendingCode)
-  if(typeof window._u9SetMode === 'function'){
+  // 2. App montée → naviguer vers multi
+  if(typeof window._u9SetMode==='function'){
     window._u9SetMode('multi');
-    // MultiGame va se monter et lire _u9PendingCode via son useEffect
     return;
   }
-
-  // React pas encore prêt → retry
-  if(attempt < 20){
-    setTimeout(()=>onDeepLinkCode(code, attempt+1), 500);
+  // 3. React pas prêt → retry 20×500ms
+  if(attempt<20){
+    setTimeout(()=>onDeepLinkCode(code,attempt+1),500);
   } else {
-    u9Toast('Invitation : code '+code+' — rejoins manuellement');
-    window._u9PendingCode = null;
+    u9Toast('Code: '+code+' — rejoins manuellement');
+    window._u9PendingCode=null;
   }
 }
 
