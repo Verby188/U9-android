@@ -130,10 +130,22 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
                 getFcmTokenAndInject()
+
+                // Injecter le code IMMÉDIATEMENT comme variable globale
+                // avant même que React soit monté
                 pendingCode?.let { code ->
-                    injectCode(code)
+                    webView.evaluateJavascript(
+                        "window._u9PendingCode='$code';", null
+                    )
+                    // Appeler onDeepLinkCode après que React soit monté
+                    webView.postDelayed({
+                        webView.evaluateJavascript(
+                            "if(typeof onDeepLinkCode==='function')onDeepLinkCode('$code',0);", null
+                        )
+                    }, 2000)
                     pendingCode = null
                 }
+
                 pendingNotifData?.let { data ->
                     injectNotification(data)
                     pendingNotifData = null
