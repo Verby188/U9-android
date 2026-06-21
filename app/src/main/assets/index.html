@@ -52,6 +52,18 @@
 #u9-friends-btn{position:fixed;top:.7rem;left:.7rem;z-index:8000;display:none;
   background:rgba(15,23,42,.85);border:1px solid rgba(232,200,74,.25);border-radius:20px;
   padding:.35rem .8rem;cursor:pointer;font-size:.75rem;color:#e8c84a;backdrop-filter:blur(6px);font-weight:600}
+#u9-leaderboard-btn{position:fixed;top:2.9rem;left:.7rem;z-index:8000;display:none;
+  background:rgba(15,23,42,.85);border:1px solid rgba(232,200,74,.25);border-radius:20px;
+  padding:.35rem .8rem;cursor:pointer;font-size:.75rem;color:#e8c84a;backdrop-filter:blur(6px);font-weight:600}
+#u9-leaderboard-modal{position:fixed;inset:0;z-index:8600;background:rgba(0,0,0,.8);
+  display:none;align-items:center;justify-content:center;padding:1.2rem}
+#u9-leaderboard-modal.show{display:flex}
+#u9-wn-modal{position:fixed;inset:0;z-index:8700;background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;padding:1.2rem}
+#u9-wn-modal.show{display:flex}
+.u9-lb-sort{flex:1;padding:.4rem;border-radius:8px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-size:.68rem;font-weight:700;cursor:pointer}
+.u9-lb-sort.active{border-color:#e8c84a;background:rgba(232,200,74,.18);color:#e8c84a}
 
 /* ══ COLOR BTN & MODAL ══ */
 #u9-color-btn{position:fixed;bottom:.9rem;right:.7rem;z-index:8000;
@@ -115,6 +127,11 @@
 #u9-profile-modal{position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.8);
   display:none;align-items:center;justify-content:center;padding:1.2rem}
 #u9-profile-modal.show{display:flex}
+.u9-av-btn{width:36px;height:36px;border-radius:9px;border:1.5px solid transparent;
+  background:rgba(255,255,255,.06);font-size:1.15rem;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;transition:.12s;padding:0}
+.u9-av-btn:hover{background:rgba(255,255,255,.12)}
+.u9-av-btn.sel{border-color:#e8c84a;background:rgba(232,200,74,.18)}
 
 /* ══ TOAST ══ */
 #u9-toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);z-index:9999;
@@ -475,6 +492,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
 
 <!-- FRIENDS BUTTON -->
 <button id="u9-friends-btn" onclick="u9OpenFriends()">👥 Amis</button>
+<button id="u9-leaderboard-btn" onclick="u9OpenLeaderboard()">🏆 Classement</button>
 
 <!-- FRIENDS MODAL -->
 <div id="u9-friends-modal">
@@ -509,12 +527,27 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
     <div style="display:flex;align-items:center;gap:.8rem">
       <div id="u9-pm-av" style="width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;flex-shrink:0"></div>
       <div>
-        <div id="u9-pm-pseudo" style="font-size:1rem;font-weight:700;color:#e8c84a"></div>
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <div id="u9-pm-pseudo" style="font-size:1rem;font-weight:700;color:#e8c84a"></div>
+          <button id="u9-pm-pseudo-edit-btn" onclick="u9OpenPseudoEdit()" title="Changer de pseudo" style="background:none;border:none;cursor:pointer;font-size:.85rem;padding:0;line-height:1">✏️</button>
+        </div>
         <div id="u9-pm-email" style="font-size:.7rem;color:rgba(255,255,255,.35)"></div>
       </div>
     </div>
+    <div id="u9-pm-pseudo-edit" style="display:none">
+      <input id="u9-pm-pseudo-input" class="u9-inp" placeholder="Nouveau pseudo" maxlength="14" style="margin:0">
+      <div id="u9-pm-pseudo-err" style="color:#fca5a5;font-size:.72rem;min-height:.9rem;margin:.25rem 0"></div>
+      <div style="display:flex;gap:.5rem">
+        <button onclick="u9ClosePseudoEdit()" style="flex:1;padding:.45rem;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);font-size:.72rem;font-weight:600;cursor:pointer">Annuler</button>
+        <button onclick="u9SavePseudoChange()" style="flex:1;padding:.45rem;border-radius:8px;border:none;background:linear-gradient(135deg,#e8c84a,#f5d76e);color:#1a1a1a;font-weight:700;font-size:.72rem;cursor:pointer">Enregistrer</button>
+      </div>
+      <div style="font-size:.62rem;color:rgba(255,255,255,.3);text-align:center;margin-top:.3rem">Modifiable une fois tous les 30 jours</div>
+    </div>
+    <div style="font-size:.7rem;color:rgba(255,255,255,.4);font-weight:600;margin-top:.1rem">Avatar</div>
+    <div id="u9-pm-av-grid" style="display:flex;flex-wrap:wrap;gap:.35rem"></div>
     <div id="u9-pm-stats" style="display:flex;gap:.5rem;flex-wrap:wrap"></div>
     <div id="u9-pm-history" style="font-size:.75rem;color:rgba(255,255,255,.4)"></div>
+    <button class="u9-gbtn" style="background:rgba(255,255,255,.08)" onclick="u9OpenWhatsNew()">✨ Quoi de neuf</button>
     <button class="u9-gbtn" style="background:linear-gradient(135deg,#b91c1c,#ef4444)" onclick="u9Logout()">Se déconnecter</button>
   </div>
 </div>
@@ -578,6 +611,22 @@ const GOLD = "#e8c84a",
   GOLD2 = "#c9a227";
 const PC = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 const PRENOMS_AI = ["Alice", "Bruno", "Clara", "David", "Emma", "Félix", "Gaëlle", "Hugo", "Inès", "Jules"];
+// Avatars emoji des adversaires IA (stables par siège)
+const U9_AI_AVATARS = ["🦁","🐺","🐉","🦊","🐸","🐧","🦄","🐻","🐯","🦅"];
+// Pastille avatar : emoji si défini, sinon point coloré (rendu d'origine)
+function u9AvatarNode(avatar, color, size){
+  size = size || 8;
+  if(avatar){
+    return React.createElement("div", { style: {
+      width: size + 9, height: size + 9, borderRadius: "50%",
+      background: "rgba(232,200,74,0.15)", display: "flex", alignItems: "center",
+      justifyContent: "center", fontSize: size + 4, lineHeight: 1, flexShrink: 0
+    } }, avatar);
+  }
+  return React.createElement("div", { style: {
+    width: size, height: size, borderRadius: "50%", background: color, flexShrink: 0
+  } });
+}
 function arr(x) {
   if (!x) return [];
   if (Array.isArray(x)) return x;
@@ -1333,6 +1382,7 @@ function GameOverScreen({
 function GameBoard({
   myName,
   myColor,
+  myAvatar,
   myScore,
   hv,
   inSelect,
@@ -1427,15 +1477,7 @@ function GameBoard({
       padding: "4px 14px",
       border: `1px solid ${myColor}55`
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 8,
-      height: 8,
-      borderRadius: "50%",
-      background: myColor,
-      flexShrink: 0
-    }
-  }), /*#__PURE__*/React.createElement("span", {
+  }, u9AvatarNode(myAvatar, myColor, 8), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 13,
       color: "#e2e8f0",
@@ -1577,13 +1619,9 @@ function GameBoard({
       }
     }, timerInfo.remaining, "s"), /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 8,
-        height: 8,
-        borderRadius: "50%",
-        background: p.color,
         marginBottom: 3
       }
-    }), /*#__PURE__*/React.createElement("span", {
+    }, u9AvatarNode(p.avatar, p.color, 8)), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 10,
         fontWeight: 700,
@@ -1851,12 +1889,14 @@ function AIGame({
     const players = [{
       name: myName,
       ai: false,
+      avatar: window.U9_AVATAR || "",
       hand: []
     }, ...Array.from({
       length: numAI
     }, (_, i) => ({
       name: PRENOMS_AI[i],
       ai: true,
+      avatar: U9_AI_AVATARS[i % U9_AI_AVATARS.length],
       hand: []
     }))];
     const {
@@ -1954,6 +1994,7 @@ function AIGame({
               elim
             });
             setScreen("gameover");
+            window.u9GameFinished && window.u9GameFinished(scores[0], !elim[0]);
           } else {
             setRoundRes({
               scores,
@@ -2141,6 +2182,7 @@ function AIGame({
         elim
       }));
       setScreen("gameover");
+      window.u9GameFinished && window.u9GameFinished(scores[0], !elim[0]);
     } else {
       setRoundRes({
         scores,
@@ -2209,6 +2251,7 @@ function AIGame({
   const selOk = sel.length > 0 && isValidPlay(selCards);
   const others = game.players.slice(1).map((p, i) => ({
     name: p.name,
+    avatar: p.avatar,
     color: PC[(i + 1) % 8],
     score: game.scores[i + 1],
     elim: game.elim[i + 1],
@@ -2218,6 +2261,7 @@ function AIGame({
   return /*#__PURE__*/React.createElement(GameBoard, {
     myName: myName,
     myColor: PC[0],
+    myAvatar: window.U9_AVATAR || "",
     myScore: game.scores[0],
     hv: hv,
     inSelect: inSelect,
@@ -2368,7 +2412,7 @@ function MultiGame({
       timeoutFired.current = false;
     }
     if (st === "result") setScreen("result");
-    if (st === "gameover") setScreen("gameover");
+    if (st === "gameover") { setScreen("gameover"); window.u9GameFinished && window.u9GameFinished(arr(game.scores)[myIdx], !arr(game.elim)[myIdx]); }
     if (st === "lobby") setScreen("lobby");
   }, [room?.status]);
   useEffect(() => {
@@ -2451,7 +2495,8 @@ function MultiGame({
         playerOrder: [myPid],
         players: {
           [myPid]: {
-            name: myName.trim()
+            name: myName.trim(),
+            avatar: window.U9_AVATAR || ""
           }
         },
         createdAt: Date.now()
@@ -2483,7 +2528,7 @@ function MultiGame({
       const myPid = pid.current;
       const ord = arr(data.playerOrder);
       const u = {};
-      u[`players/${myPid}`] = { name: myName.trim() };
+      u[`players/${myPid}`] = { name: myName.trim(), avatar: window.U9_AVATAR || "" };
       if (!ord.includes(myPid)) u['playerOrder'] = [...ord, myPid];
       await db().ref(`rooms/${code}`).update(u);
       setRoomCode(code);
@@ -2991,6 +3036,7 @@ function MultiGame({
   const others = order.map((id, i) => ({
     id,
     name: room.players?.[id]?.name || id,
+    avatar: room.players?.[id]?.avatar || "",
     color: PC[i % 8],
     score: arr(game.scores)[i] || 0,
     elim: arr(game.elim)[i],
@@ -3000,6 +3046,7 @@ function MultiGame({
   return /*#__PURE__*/React.createElement(GameBoard, {
     myName: room.players?.[pid.current]?.name || myName,
     myColor: myColor,
+    myAvatar: window.U9_AVATAR || "",
     myScore: arr(game.scores)[myIdx] || 0,
     hv: hv,
     inSelect: inSelect,
@@ -3479,6 +3526,196 @@ async function _u9CleanOldRooms(){
 }
 window._u9CleanOldRooms = _u9CleanOldRooms;
 
+// ── Notation in-app + classement après une partie terminée ──
+function u9GameFinished(finalScore, won){
+  // Compteur pour la notation in-app
+  let n = parseInt(localStorage.getItem('u9_games_played')||'0',10) + 1;
+  localStorage.setItem('u9_games_played', String(n));
+  if(n >= 3 && !localStorage.getItem('u9_review_asked')){
+    localStorage.setItem('u9_review_asked','1');
+    try{ if(window.Android && window.Android.requestReview) window.Android.requestReview(); }catch(e){}
+  }
+  // Classement (joueurs connectés uniquement)
+  u9RecordResult(finalScore, won);
+}
+window.u9GameFinished = u9GameFinished;
+
+// Met à jour l'entrée du joueur dans le classement U9 (nœud séparé de 5 Rois)
+async function u9RecordResult(finalScore, won){
+  if(!window.U9_USER || !window.U9_USER.uid) return;
+  try{
+    const uid = window.U9_USER.uid;
+    const cur = await u9Get('u9_leaderboard/' + uid) || {};
+    const entry = {
+      pseudo: window.U9_USER.pseudo,
+      avatar: window.U9_AVATAR || '',
+      games: (cur.games || 0) + 1,
+      wins: (cur.wins || 0) + (won ? 1 : 0),
+      totalScore: (cur.totalScore || 0) + (typeof finalScore === 'number' ? finalScore : 0)
+    };
+    await u9Set('u9_leaderboard/' + uid, entry);
+  }catch(e){}
+}
+window.u9RecordResult = u9RecordResult;
+
+// ── Affichage du classement ──
+let _u9lbSort = 'wins';
+function u9OpenLeaderboard(){
+  document.getElementById('u9-leaderboard-modal').classList.add('show');
+  u9RenderLeaderboard();
+}
+function u9CloseLeaderboard(){
+  document.getElementById('u9-leaderboard-modal').classList.remove('show');
+}
+function u9lbSetSort(s){
+  _u9lbSort = s;
+  ['wins','pct','avg'].forEach(k=>{
+    const b=document.getElementById('u9-lb-sort-'+k);
+    if(b)b.classList.toggle('active', k===s);
+  });
+  u9RenderLeaderboard();
+}
+async function u9RenderLeaderboard(){
+  const list=document.getElementById('u9-lb-list');
+  if(!list)return;
+  list.innerHTML='<div style="color:rgba(255,255,255,.4);text-align:center;padding:1.2rem">Chargement…</div>';
+  let data={};
+  try{ data=await u9Get('u9_leaderboard')||{}; }catch(e){}
+  let rows=Object.entries(data).map(([uid,e])=>({
+    uid, pseudo:e.pseudo||'?', avatar:e.avatar||'',
+    wins:e.wins||0, games:e.games||0,
+    pct:e.games?Math.round((e.wins||0)/e.games*100):0,
+    avg:e.games?Math.round((e.totalScore||0)/e.games):0
+  })).filter(r=>r.games>0);
+  if(_u9lbSort==='wins') rows.sort((a,b)=>b.wins-a.wins||b.pct-a.pct);
+  else if(_u9lbSort==='pct') rows.sort((a,b)=>b.pct-a.pct||b.wins-a.wins);
+  else rows.sort((a,b)=>a.avg-b.avg||b.wins-a.wins); // moyenne basse = mieux
+  if(!rows.length){ list.innerHTML='<div style="color:rgba(255,255,255,.4);text-align:center;padding:1.5rem">Aucune partie enregistrée pour l\'instant.</div>'; return; }
+  const myUid=window.U9_USER&&window.U9_USER.uid;
+  const medals=['🥇','🥈','🥉'];
+  list.innerHTML=rows.map((r,i)=>{
+    const me=r.uid===myUid;
+    const rank=medals[i]||('#'+(i+1));
+    const av=r.avatar
+      ? `<span style="font-size:1.2rem;width:26px;text-align:center">${r.avatar}</span>`
+      : `<span style="width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:${u9pc(r.pseudo.charCodeAt(0)%8)};font-size:.75rem;font-weight:700;flex-shrink:0">${r.pseudo[0].toUpperCase()}</span>`;
+    const stat=_u9lbSort==='pct'?(r.pct+'%'):_u9lbSort==='avg'?(r.avg+' pts'):(r.wins+' V');
+    return `<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-radius:10px;margin-bottom:.3rem;background:${me?'rgba(232,200,74,.12)':'rgba(255,255,255,.04)'};border:1px solid ${me?'rgba(232,200,74,.3)':'transparent'}">`
+      + `<div style="width:26px;text-align:center;font-weight:700;font-size:.78rem;color:rgba(255,255,255,.7);flex-shrink:0">${rank}</div>`
+      + av
+      + `<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.85rem;color:${me?'#e8c84a':'#fff'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.pseudo}</div>`
+      + `<div style="font-size:.63rem;color:rgba(255,255,255,.4)">${r.wins}V · ${r.games}P · ${r.pct}% · moy ${r.avg}</div></div>`
+      + `<div style="font-weight:800;font-size:.9rem;color:#e8c84a;flex-shrink:0">${stat}</div>`
+      + `</div>`;
+  }).join('');
+}
+window.u9OpenLeaderboard=u9OpenLeaderboard;
+window.u9lbSetSort=u9lbSetSort;
+
+// Construction de la modale classement (DOM hors #root)
+(function(){
+  function build(){
+    if(document.getElementById('u9-leaderboard-modal'))return;
+    const m=document.createElement('div');
+    m.id='u9-leaderboard-modal';
+    m.innerHTML='<div class="u9-modal-card">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+        + '<div class="u9-modal-title">🏆 Classement</div>'
+        + '<button onclick="u9CloseLeaderboard()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:1.2rem;cursor:pointer">✕</button>'
+      + '</div>'
+      + '<div style="display:flex;gap:.4rem;margin:.6rem 0">'
+        + '<button class="u9-lb-sort active" id="u9-lb-sort-wins" onclick="u9lbSetSort(\'wins\')">🥇 Victoires</button>'
+        + '<button class="u9-lb-sort" id="u9-lb-sort-pct" onclick="u9lbSetSort(\'pct\')">% Victoires</button>'
+        + '<button class="u9-lb-sort" id="u9-lb-sort-avg" onclick="u9lbSetSort(\'avg\')">📊 Moyenne</button>'
+      + '</div>'
+      + '<div id="u9-lb-list" style="max-height:55vh;overflow-y:auto"></div>'
+    + '</div>';
+    document.body.appendChild(m);
+    m.addEventListener('click',e=>{ if(e.target===m) u9CloseLeaderboard(); });
+  }
+  if(document.body) build(); else document.addEventListener('DOMContentLoaded', build);
+})();
+window.u9CloseLeaderboard=u9CloseLeaderboard;
+
+// ══ QUOI DE NEUF ══
+const U9_APP_VERSION = '1.1';
+const U9_WN_FEATURES = [
+  {icon:'🎨', bg:'#bf360c,#e64a19', title:'Couleurs des cartes', desc:'Personnalise la couleur de chaque enseigne (idéal en cas de daltonisme). Appuie sur <b>🎨</b> en bas à droite — tes couleurs sont sauvegardées sur ton compte.'},
+  {icon:'🖼️', bg:'#1565c0,#42a5f5', title:'Avatars', desc:'Choisis un avatar emoji dans ton profil. Il s\'affiche dans le lobby et <b>en partie</b>, à côté de ton nom.'},
+  {icon:'🏆', bg:'#f57f17,#fbc02d', title:'Classement global', desc:'Suis tes statistiques : victoires, taux de victoire et score moyen. Ouvre le <b>🏆 Classement</b> en haut à gauche.'},
+  {icon:'🔑', bg:'#4a148c,#7b1fa2', title:'Mot de passe oublié', desc:'Un lien sous la connexion t\'envoie un email pour réinitialiser ton mot de passe.'},
+  {icon:'✏️', bg:'#00695c,#26a69a', title:'Changement de pseudo', desc:'Tu peux désormais changer ton pseudo depuis ton profil (une fois tous les 30 jours).'}
+];
+let _u9wnIdx = 0;
+function u9RenderWN(){
+  const s = U9_WN_FEATURES[_u9wnIdx];
+  const icon = document.getElementById('u9-wn-icon');
+  icon.textContent = s.icon;
+  icon.style.background = 'linear-gradient(135deg,'+s.bg+')';
+  document.getElementById('u9-wn-title').textContent = s.title;
+  document.getElementById('u9-wn-desc').innerHTML = s.desc;
+  document.getElementById('u9-wn-dots').innerHTML = U9_WN_FEATURES.map((_,i)=>
+    `<span style="width:7px;height:7px;border-radius:50%;background:${i===_u9wnIdx?'#e8c84a':'rgba(255,255,255,.25)'}"></span>`).join('');
+  document.getElementById('u9-wn-next').textContent = (_u9wnIdx===U9_WN_FEATURES.length-1) ? "C'est parti !" : 'Suivant ›';
+}
+function u9WNNext(){
+  if(_u9wnIdx < U9_WN_FEATURES.length-1){ _u9wnIdx++; u9RenderWN(); }
+  else u9CloseWhatsNew();
+}
+function u9OpenWhatsNew(){
+  _u9wnIdx = 0; u9RenderWN();
+  document.getElementById('u9-wn-modal').classList.add('show');
+}
+function u9CloseWhatsNew(){
+  document.getElementById('u9-wn-modal').classList.remove('show');
+  try{ localStorage.setItem('u9_last_version', U9_APP_VERSION); }catch(e){}
+}
+function u9MaybeShowWhatsNew(){
+  let last=''; try{ last=localStorage.getItem('u9_last_version')||''; }catch(e){}
+  if(last !== U9_APP_VERSION) u9OpenWhatsNew();
+}
+window.u9OpenWhatsNew=u9OpenWhatsNew;
+window.u9CloseWhatsNew=u9CloseWhatsNew;
+window.u9WNNext=u9WNNext;
+window.u9MaybeShowWhatsNew=u9MaybeShowWhatsNew;
+
+// ══ MISE À JOUR IN-APP — bannière « Redémarrer » ══
+// Appelé par MainActivity quand une mise à jour flexible a fini de télécharger
+window.onUpdateReady = function(){
+  let b = document.getElementById('u9-update-banner');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'u9-update-banner';
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:linear-gradient(135deg,#1e293b,#0f172a);border-top:2px solid #e8c84a;padding:.7rem 1rem;display:flex;align-items:center;gap:.8rem';
+    b.innerHTML = '<div style="flex:1;font-size:.8rem;color:#fff">✨ Mise à jour téléchargée et prête.</div>'
+      + '<button onclick="u9ApplyUpdate()" style="padding:.45rem .9rem;border-radius:8px;border:none;background:linear-gradient(135deg,#e8c84a,#f5d76e);color:#1a1a1a;font-weight:800;font-size:.78rem;cursor:pointer">Redémarrer</button>';
+    document.body.appendChild(b);
+  }
+  b.style.display = 'flex';
+};
+window.u9ApplyUpdate = function(){
+  try{ if(window.Android && window.Android.completeUpdate) window.Android.completeUpdate(); }catch(e){}
+};
+
+(function(){
+  function build(){
+    if(document.getElementById('u9-wn-modal'))return;
+    const m=document.createElement('div');
+    m.id='u9-wn-modal';
+    m.innerHTML='<div class="u9-modal-card" style="text-align:center;max-width:340px">'
+      + '<div style="font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);font-weight:700;margin-bottom:.8rem">✨ Quoi de neuf</div>'
+      + '<div id="u9-wn-icon" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto .9rem"></div>'
+      + '<div id="u9-wn-title" style="font-size:1.15rem;font-weight:800;color:#e8c84a;margin-bottom:.5rem"></div>'
+      + '<div id="u9-wn-desc" style="font-size:.85rem;color:rgba(255,255,255,.75);line-height:1.5;margin-bottom:1rem"></div>'
+      + '<div id="u9-wn-dots" style="display:flex;gap:6px;justify-content:center;margin-bottom:1rem"></div>'
+      + '<button id="u9-wn-next" onclick="u9WNNext()" style="width:100%;padding:.6rem;border-radius:10px;border:none;background:linear-gradient(135deg,#e8c84a,#f5d76e);color:#1a1a1a;font-weight:800;font-size:.85rem;cursor:pointer">Suivant ›</button>'
+      + '<div onclick="u9CloseWhatsNew()" style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.6rem;cursor:pointer;text-decoration:underline">Passer</div>'
+    + '</div>';
+    document.body.appendChild(m);
+  }
+  if(document.body) build(); else document.addEventListener('DOMContentLoaded', build);
+})();
+
 // ── Token refresh ──
 async function u9EnsureToken(){
   if(!window.U9_USER?.refreshToken)return;
@@ -3578,7 +3815,9 @@ function u9OnLoggedIn(){
   u9UpdateBadge();
   document.getElementById('u9-profile-badge').style.display='flex';
   document.getElementById('u9-friends-btn').style.display='block';
+  document.getElementById('u9-leaderboard-btn').style.display='block';
   u9LoadFriends();
+  u9LoadAvatar();
   u9UpdateOnlineStatus();
   _u9CleanOldRooms(); // nettoyage des salles fantômes au login
   if(!_u9OnlineInterval)_u9OnlineInterval=setInterval(u9UpdateOnlineStatus,60000);
@@ -3596,7 +3835,7 @@ function u9HideOverlay(){document.getElementById('u9-auth-overlay').classList.ad
 function u9UpdateBadge(){
   if(!window.U9_USER)return;
   const av=document.getElementById('u9-badge-av');
-  av.textContent=window.U9_USER.pseudo[0].toUpperCase();av.style.background=u9pc(window.U9_USER.pseudo.charCodeAt(0)%8);
+  u9ApplyAvatar(av,window.U9_USER.pseudo);
   document.getElementById('u9-badge-nm').textContent=window.U9_USER.pseudo;
 }
 
@@ -3619,12 +3858,134 @@ function u9TryRestoreSession(){
 }
 
 // ── Profile ──
+// ══ AVATAR ══
+const U9_AVATARS=['👑','🦁','🐺','🐉','🦊','🐸','🐧','🦄','🎯','🔥','⚡','🌟','💎','🎭','🦅','🐻','🐯','🦋','🌙','☀️'];
+window.U9_AVATAR=localStorage.getItem('u9_avatar')||'';
+
+// Applique soit l'emoji avatar choisi, soit l'initiale colorée (comportement d'origine)
+function u9ApplyAvatar(el,pseudo){
+  if(!el)return;
+  if(window.U9_AVATAR){
+    el.textContent=window.U9_AVATAR;
+    el.style.background='rgba(232,200,74,.15)';
+  }else{
+    const p=pseudo||'?';
+    el.textContent=p[0].toUpperCase();
+    el.style.background=u9pc(p.charCodeAt(0)%8);
+  }
+}
+
+async function u9SetAvatar(emoji){
+  window.U9_AVATAR=emoji;
+  localStorage.setItem('u9_avatar',emoji);
+  // Avatar = attribut de profil partagé entre les deux apps (comme le pseudo)
+  if(window.U9_USER&&window.U9_USER.uid){try{await u9Set('users/'+window.U9_USER.uid+'/avatar',emoji);}catch(e){}}
+  u9UpdateAvatarDisplay();
+  u9RenderAvatarPicker();
+}
+
+async function u9LoadAvatar(){
+  if(window.U9_USER&&window.U9_USER.uid){
+    try{
+      const av=await u9Get('users/'+window.U9_USER.uid+'/avatar');
+      if(av){window.U9_AVATAR=av;localStorage.setItem('u9_avatar',av);}
+    }catch(e){}
+  }
+  u9UpdateAvatarDisplay();
+}
+
+function u9UpdateAvatarDisplay(){
+  const pseudo=window.U9_USER?window.U9_USER.pseudo:'';
+  u9ApplyAvatar(document.getElementById('u9-badge-av'),pseudo);
+  u9ApplyAvatar(document.getElementById('u9-pm-av'),pseudo);
+}
+
+function u9RenderAvatarPicker(){
+  const grid=document.getElementById('u9-pm-av-grid');
+  if(!grid)return;
+  grid.innerHTML='';
+  // Option « initiale » (aucun emoji)
+  const initBtn=document.createElement('button');
+  initBtn.className='u9-av-btn'+(window.U9_AVATAR?'':' sel');
+  initBtn.textContent=(window.U9_USER&&window.U9_USER.pseudo?window.U9_USER.pseudo[0].toUpperCase():'?');
+  initBtn.title='Initiale';
+  initBtn.onclick=()=>u9SetAvatar('');
+  grid.appendChild(initBtn);
+  U9_AVATARS.forEach(emoji=>{
+    const btn=document.createElement('button');
+    btn.className='u9-av-btn'+(emoji===window.U9_AVATAR?' sel':'');
+    btn.textContent=emoji;
+    btn.onclick=()=>u9SetAvatar(emoji);
+    grid.appendChild(btn);
+  });
+}
+
+// ══ CHANGEMENT DE PSEUDO ══
+const U9_PSEUDO_COOLDOWN_DAYS=30;
+
+function u9OpenPseudoEdit(){
+  if(!window.U9_USER)return;
+  document.getElementById('u9-pm-pseudo-edit').style.display='block';
+  document.getElementById('u9-pm-pseudo-edit-btn').style.display='none';
+  document.getElementById('u9-pm-pseudo-input').value=window.U9_USER.pseudo;
+  document.getElementById('u9-pm-pseudo-err').textContent='';
+}
+function u9ClosePseudoEdit(){
+  const el=document.getElementById('u9-pm-pseudo-edit');
+  if(el)el.style.display='none';
+  const btn=document.getElementById('u9-pm-pseudo-edit-btn');
+  if(btn)btn.style.display='inline-block';
+}
+async function u9SavePseudoChange(){
+  if(!window.U9_USER)return;
+  const errEl=document.getElementById('u9-pm-pseudo-err');
+  const newPseudo=document.getElementById('u9-pm-pseudo-input').value.trim();
+  errEl.textContent='';
+  if(!newPseudo||newPseudo.length<2){errEl.textContent='Pseudo trop court (min 2 caractères).';return;}
+  if(newPseudo===window.U9_USER.pseudo){u9ClosePseudoEdit();return;}
+  // Cooldown 30 jours
+  try{
+    const lastChange=await u9Get('users/'+window.U9_USER.uid+'/lastPseudoChange');
+    if(lastChange){
+      const daysLeft=Math.ceil(U9_PSEUDO_COOLDOWN_DAYS-(Date.now()-lastChange)/86400000);
+      if(daysLeft>0){errEl.textContent=`Tu pourras changer ton pseudo dans ${daysLeft} jour${daysLeft>1?'s':''}.`;return;}
+    }
+  }catch(e){}
+  // Unicité
+  try{
+    const taken=await u9Get('pseudos/'+newPseudo.toLowerCase());
+    if(taken&&taken!==window.U9_USER.uid){errEl.textContent='Ce pseudo est déjà pris.';return;}
+  }catch(e){errEl.textContent='Erreur réseau. Réessaie.';return;}
+  const oldPseudo=window.U9_USER.pseudo;
+  try{
+    await u9Del('pseudos/'+oldPseudo.toLowerCase());
+    await u9Set('pseudos/'+newPseudo.toLowerCase(),window.U9_USER.uid);
+    await u9Set('users/'+window.U9_USER.uid+'/pseudo',newPseudo);
+    await u9Set('users/'+window.U9_USER.uid+'/lastPseudoChange',Date.now());
+    // Met à jour le classement U9 si l'utilisateur y figure déjà (nœud séparé de 5 Rois)
+    const lbEntry=await u9Get('u9_leaderboard/'+window.U9_USER.uid);
+    if(lbEntry)await u9Set('u9_leaderboard/'+window.U9_USER.uid+'/pseudo',newPseudo);
+
+    window.U9_USER.pseudo=newPseudo;
+    const s=JSON.parse(localStorage.getItem('u9_user')||'{}');s.pseudo=newPseudo;
+    localStorage.setItem('u9_user',JSON.stringify(s));
+    document.getElementById('u9-pm-pseudo').textContent=newPseudo;
+    if(typeof u9UpdateBadge==='function')u9UpdateBadge();
+    u9ClosePseudoEdit();
+    u9Toast('✅ Pseudo mis à jour !');
+  }catch(e){
+    errEl.textContent='Erreur lors de la mise à jour. Réessaie.';
+  }
+}
+
 function u9ShowProfile(){
   if(!window.U9_USER)return;
   document.getElementById('u9-pm-pseudo').textContent=window.U9_USER.pseudo;
   document.getElementById('u9-pm-email').textContent=window.U9_USER.email;
+  u9ClosePseudoEdit();
   const av=document.getElementById('u9-pm-av');
-  av.textContent=window.U9_USER.pseudo[0].toUpperCase();av.style.background=u9pc(window.U9_USER.pseudo.charCodeAt(0)%8);
+  u9ApplyAvatar(av,window.U9_USER.pseudo);
+  u9RenderAvatarPicker();
   // Stats
   const hist=u9GetHistory();
   const stats=u9ComputeStats(hist);
@@ -3647,6 +4008,7 @@ function u9Logout(){
   window.U9_USER=null;localStorage.removeItem('u9_user');
   document.getElementById('u9-profile-badge').style.display='none';
   document.getElementById('u9-friends-btn').style.display='none';
+  document.getElementById('u9-leaderboard-btn').style.display='none';
   document.getElementById('u9-auth-overlay').classList.remove('hidden');
 }
 
@@ -3953,6 +4315,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     // Pas de session → overlay auth
     // Si code en attente, sera traité après connexion
   }
+
+  // Affiche « Quoi de neuf » si la version a changé (laisse l'UI se stabiliser)
+  setTimeout(()=>{ if(window.u9MaybeShowWhatsNew) window.u9MaybeShowWhatsNew(); }, 1200);
 });
   </script>
 </body>
