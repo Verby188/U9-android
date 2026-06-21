@@ -36,6 +36,9 @@
 .u9-gbtn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(232,200,74,.3)}
 .u9-skip{font-size:.72rem;color:rgba(255,255,255,.3);text-align:center;cursor:pointer;
   text-decoration:underline;margin-top:.2rem}
+.u9-forgot{font-size:.74rem;color:rgba(232,200,74,.65);text-align:center;cursor:pointer;
+  text-decoration:underline;margin-top:.1rem}
+.u9-forgot:hover{color:#e8c84a}
 
 /* ══ PROFILE BADGE ══ */
 #u9-profile-badge{position:fixed;top:.7rem;right:.7rem;z-index:8000;display:none;
@@ -49,6 +52,41 @@
 #u9-friends-btn{position:fixed;top:.7rem;left:.7rem;z-index:8000;display:none;
   background:rgba(15,23,42,.85);border:1px solid rgba(232,200,74,.25);border-radius:20px;
   padding:.35rem .8rem;cursor:pointer;font-size:.75rem;color:#e8c84a;backdrop-filter:blur(6px);font-weight:600}
+
+/* ══ COLOR BTN & MODAL ══ */
+#u9-color-btn{position:fixed;bottom:.9rem;right:.7rem;z-index:8000;
+  background:rgba(15,23,42,.85);border:1px solid rgba(232,200,74,.25);border-radius:20px;
+  padding:.35rem .7rem;cursor:pointer;font-size:.85rem;color:#e8c84a;backdrop-filter:blur(6px)}
+#u9-color-modal{position:fixed;inset:0;z-index:8600;background:rgba(0,0,0,.8);
+  display:none;align-items:center;justify-content:center;padding:1.2rem}
+#u9-color-modal.show{display:flex}
+.u9cm-rowlbl{font-size:.62rem;color:rgba(255,255,255,.45);text-transform:uppercase;
+  letter-spacing:.1em;margin:.5rem 0 .35rem;font-weight:700}
+.u9cm-cards{display:flex;gap:.4rem;justify-content:center;flex-wrap:nowrap}
+.u9cm-wrap{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.u9cm-card{width:46px;height:66px;border-radius:7px;background:#fff;
+  border:1.5px solid rgba(0,0,0,.18);box-shadow:1px 2px 6px rgba(0,0,0,.35);
+  display:flex;flex-direction:column;justify-content:space-between;padding:3px;
+  position:relative;flex-shrink:0}
+.u9cm-card .v{font-weight:800;font-size:10px;line-height:1.1}
+.u9cm-card .m{font-size:20px;text-align:center;position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);line-height:1}
+.u9cm-card .b{transform:rotate(180deg);font-weight:800;font-size:10px;line-height:1.1;align-self:flex-end}
+.u9cm-lbl{font-size:.58rem;color:rgba(255,255,255,.55);font-weight:600}
+.u9cm-inp{width:34px;height:22px;border:1.5px solid rgba(255,255,255,.15);border-radius:5px;
+  padding:1px;cursor:pointer;background:none}
+.u9cm-presets{display:flex;gap:.4rem;margin:.4rem 0;flex-wrap:wrap}
+.u9cm-preset{padding:.28rem .6rem;border:1px solid rgba(255,255,255,.15);border-radius:7px;
+  font-size:.66rem;cursor:pointer;background:rgba(255,255,255,.05);color:rgba(255,255,255,.7);
+  font-weight:600;transition:.15s}
+.u9cm-preset:hover{border-color:#e8c84a;color:#e8c84a}
+.u9cm-actions{display:flex;gap:.5rem;margin-top:.9rem}
+.u9cm-actions button{flex:1;padding:.5rem;border-radius:9px;border:none;font-weight:700;
+  font-size:.74rem;cursor:pointer;transition:.15s}
+.u9cm-reset{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
+.u9cm-reset:hover{background:rgba(255,255,255,.14)}
+.u9cm-save{background:linear-gradient(135deg,#e8c84a,#f5d76e);color:#1a1a1a}
+.u9cm-save:hover{opacity:.9}
 
 /* ══ FRIENDS MODAL ══ */
 #u9-friends-modal{position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,.8);
@@ -424,6 +462,7 @@ function(a,b,c){if(!Vd(b))throw Error(n(200));return Wd(null,a,b,!1,c)};Q.unmoun
     <input class="u9-inp" id="u9-pwd" placeholder="Mot de passe" type="password">
     <div class="u9-err" id="u9-err"></div>
     <button class="u9-gbtn" id="u9-auth-btn" onclick="u9DoAuth()">Se connecter</button>
+    <div class="u9-forgot" id="u9-forgot-link" onclick="u9ForgotPassword()">Mot de passe oublié ?</div>
     <div class="u9-skip" onclick="u9SkipAuth()">Continuer sans compte</div>
   </div>
 </div>
@@ -802,7 +841,9 @@ function Card({
   }, "\u269C"));
   const isJ = card.rank === "JOKER",
     red = card.suit === "hearts" || card.suit === "diamonds";
-  const col = isJ ? "#7c3aed" : red ? "#dc2626" : "#1e3a5f";
+  const col = window.u9SuitColor
+    ? window.u9SuitColor(card)
+    : (isJ ? "#7c3aed" : red ? "#dc2626" : "#1e3a5f");
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClick,
     style: {
@@ -3005,6 +3046,9 @@ function App() {
   const [nameError, setNameError] = useState(false);
   // Exposer setMode globalement pour navigation externe
   useEffect(() => { window._u9SetMode = setMode; return ()=>{window._u9SetMode=null;}; });
+  // Permet au configurateur de couleurs de forcer un re-render des cartes
+  const [,_u9cv] = useState(0);
+  useEffect(() => { window._u9RefreshColors = () => _u9cv(v => v + 1); return () => { window._u9RefreshColors = null; }; });
   // Écouter l'event d'authentification
   useEffect(() => {
     const pseudo = window.U9_USER?.pseudo || window._u9PendingLogin?.pseudo;
@@ -3234,6 +3278,151 @@ function App() {
     }
   }, "\uD83D\uDCD6 R\xE8gles du jeu"));
 }
+// ══════════════════════════════════════════
+// CONFIGURATEUR COULEURS DES CARTES (accessibilité / daltonisme)
+// ══════════════════════════════════════════
+(function(){
+  // Défaut = rendu actuel (cœur/carreau rouge, pique/trèfle bleu nuit, joker violet)
+  const DEF = {spades:"#1e3a5f",hearts:"#dc2626",diamonds:"#dc2626",clubs:"#1e3a5f",joker:"#7c3aed"};
+  const KEYS = ["spades","hearts","diamonds","clubs","joker"];
+  const LBL  = {spades:"Pique",hearts:"Cœur",diamonds:"Carreau",clubs:"Trèfle",joker:"Joker"};
+  const SYM2 = {spades:"♠",hearts:"♥",diamonds:"♦",clubs:"♣",joker:"✦"};
+  // Palettes prêtes à l'emploi
+  const PRESETS = {
+    classic: {label:"Classique", spades:"#1e3a5f",hearts:"#dc2626",diamonds:"#dc2626",clubs:"#1e3a5f",joker:"#7c3aed"},
+    four:    {label:"4 couleurs", spades:"#1e3a5f",hearts:"#dc2626",diamonds:"#1565c0",clubs:"#2e7d32",joker:"#7c3aed"},
+    deut:    {label:"Deutéranopie", spades:"#333333",hearts:"#D55E00",diamonds:"#56B4E9",clubs:"#009E73",joker:"#CC79A7"},
+    trit:    {label:"Tritanopie", spades:"#222222",hearts:"#CC0000",diamonds:"#CC00AA",clubs:"#007744",joker:"#884400"}
+  };
+
+  window.U9_COLORS = Object.assign({}, DEF);
+  window.u9SuitColor = function(card){
+    const c = window.U9_COLORS || DEF;
+    if(card.rank === "JOKER") return c.joker || DEF.joker;
+    return c[card.suit] || DEF[card.suit] || "#1e3a5f";
+  };
+
+  // Chargement immédiat depuis localStorage (avant le 1er rendu)
+  try{
+    const s = localStorage.getItem("u9_customcolors");
+    if(s) window.U9_COLORS = Object.assign({}, DEF, JSON.parse(s));
+  }catch(e){}
+
+  let _edit = {};
+
+  function refresh(){ if(window._u9RefreshColors) window._u9RefreshColors(); }
+
+  function miniCard(key, col){
+    const isJ = key === "joker";
+    const d = document.createElement("div");
+    d.className = "u9cm-card";
+    d.innerHTML = `<div class="v" style="color:${col}">${isJ?"J":"K"}<br>${SYM2[key]}</div>`
+      + `<div class="m" style="color:${col}">${SYM2[key]}</div>`
+      + `<div class="b" style="color:${col}">${SYM2[key]}<br>${isJ?"J":"K"}</div>`;
+    return d;
+  }
+
+  function render(){
+    const ref = document.getElementById("u9cm-ref");
+    const cust = document.getElementById("u9cm-cust");
+    const pres = document.getElementById("u9cm-presets");
+    ref.innerHTML = ""; cust.innerHTML = ""; pres.innerHTML = "";
+    KEYS.forEach((k, idx) => {
+      // référence (standard, non éditable)
+      const w1 = document.createElement("div"); w1.className = "u9cm-wrap";
+      w1.appendChild(miniCard(k, DEF[k]));
+      const l1 = document.createElement("div"); l1.className = "u9cm-lbl"; l1.textContent = LBL[k];
+      w1.appendChild(l1); ref.appendChild(w1);
+      // personnalisée (avec picker)
+      const w2 = document.createElement("div"); w2.className = "u9cm-wrap";
+      const card = miniCard(k, _edit[k] || DEF[k]); card.id = "u9cm-prev-" + idx;
+      w2.appendChild(card);
+      const l2 = document.createElement("div"); l2.className = "u9cm-lbl"; l2.textContent = LBL[k];
+      const inp = document.createElement("input");
+      inp.type = "color"; inp.className = "u9cm-inp"; inp.value = _edit[k] || DEF[k];
+      inp.oninput = e => {
+        _edit[k] = e.target.value;
+        const p = document.getElementById("u9cm-prev-" + idx);
+        if(p){ const nc = miniCard(k, e.target.value); nc.id = "u9cm-prev-" + idx; p.replaceWith(nc); }
+      };
+      w2.appendChild(l2); w2.appendChild(inp); cust.appendChild(w2);
+    });
+    Object.entries(PRESETS).forEach(([id, p]) => {
+      const b = document.createElement("button"); b.className = "u9cm-preset"; b.textContent = p.label;
+      b.onclick = () => { KEYS.forEach(k => { if(p[k]) _edit[k] = p[k]; }); render(); };
+      pres.appendChild(b);
+    });
+  }
+
+  window.u9OpenColors = function(){
+    _edit = Object.assign({}, window.U9_COLORS);
+    render();
+    document.getElementById("u9-color-modal").classList.add("show");
+  };
+  window.u9CloseColors = function(){
+    document.getElementById("u9-color-modal").classList.remove("show");
+  };
+  window.u9ResetColors = function(){ _edit = Object.assign({}, DEF); render(); };
+  window.u9SaveColors = async function(){
+    window.U9_COLORS = Object.assign({}, _edit);
+    try{ localStorage.setItem("u9_customcolors", JSON.stringify(window.U9_COLORS)); }catch(e){}
+    refresh();
+    window.u9CloseColors();
+    // Sauvegarde Firebase — nœud namespacé (les enseignes diffèrent de 5 Rois)
+    if(window.U9_USER && window.U9_USER.uid && typeof u9Set === "function"){
+      try{ await u9Set("users/" + window.U9_USER.uid + "/settings/cardColorsU9", window.U9_COLORS); }catch(e){}
+    }
+  };
+
+  // Charge les couleurs du compte au login (priorité Firebase, sinon localStorage déjà chargé)
+  window.u9LoadColors = async function(){
+    if(window.U9_USER && window.U9_USER.uid && typeof u9Get === "function"){
+      try{
+        const d = await u9Get("users/" + window.U9_USER.uid + "/settings/cardColorsU9");
+        if(d && typeof d === "object" && d.hearts){
+          window.U9_COLORS = Object.assign({}, DEF, d);
+          try{ localStorage.setItem("u9_customcolors", JSON.stringify(window.U9_COLORS)); }catch(e){}
+          refresh();
+        }
+      }catch(e){}
+    }
+  };
+  window.addEventListener("u9-logged-in", () => { window.u9LoadColors(); });
+
+  // Construction du bouton + modale (DOM hors #root, non touché par React)
+  function build(){
+    if(document.getElementById("u9-color-btn")) return;
+    const btn = document.createElement("button");
+    btn.id = "u9-color-btn"; btn.title = "Couleurs des cartes";
+    btn.textContent = "🎨"; btn.onclick = window.u9OpenColors;
+    document.body.appendChild(btn);
+
+    const modal = document.createElement("div");
+    modal.id = "u9-color-modal";
+    modal.innerHTML =
+      '<div class="u9-modal-card">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between">' +
+          '<div class="u9-modal-title">🎨 Couleurs des cartes</div>' +
+          '<button onclick="u9CloseColors()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:1.2rem;cursor:pointer">✕</button>' +
+        '</div>' +
+        '<div class="u9cm-rowlbl">Couleurs standard</div>' +
+        '<div class="u9cm-cards" id="u9cm-ref"></div>' +
+        '<div class="u9cm-rowlbl">Vos couleurs — appuyez pour modifier</div>' +
+        '<div class="u9cm-cards" id="u9cm-cust"></div>' +
+        '<div class="u9cm-rowlbl">Palettes prédéfinies</div>' +
+        '<div class="u9cm-presets" id="u9cm-presets"></div>' +
+        '<div class="u9cm-actions">' +
+          '<button class="u9cm-reset" onclick="u9ResetColors()">Réinitialiser</button>' +
+          '<button class="u9cm-save" onclick="u9SaveColors()">Enregistrer</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+    // Fermer en cliquant hors de la carte
+    modal.addEventListener("click", e => { if(e.target === modal) window.u9CloseColors(); });
+  }
+  if(document.body) build(); else document.addEventListener("DOMContentLoaded", build);
+})();
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(App));
 
@@ -3267,6 +3456,29 @@ async function u9Del(path){
 window.u9Get = u9Get;
 window.u9SendFCM = u9SendFCM;
 
+// ── Nettoyage automatique des salles fantômes ──
+async function _u9CleanOldRooms(){
+  try{
+    const rooms = await u9Get('rooms');
+    if(!rooms || typeof rooms !== 'object') return;
+    const now = Date.now();
+    const TWO_H = 7200000;     // salle d'attente abandonnée
+    const HALF_DAY = 43200000; // garde-fou sur n'importe quelle salle
+    const cur = window._u9CurrentRoom || '';
+    for(const [code, room] of Object.entries(rooms)){
+      if(!room || code === cur) continue;
+      const created = room.createdAt || 0;
+      const age = now - created;
+      const corrupted = created > now;                 // timestamp dans le futur → corrompu
+      const playing = room.status === 'playing';
+      const stale = !playing && age > TWO_H;           // lobby laissé à l'abandon > 2h
+      const ancient = age > HALF_DAY;                  // toute salle > 12h
+      if(corrupted || stale || ancient) u9Del('rooms/' + code);
+    }
+  }catch(e){}
+}
+window._u9CleanOldRooms = _u9CleanOldRooms;
+
 // ── Token refresh ──
 async function u9EnsureToken(){
   if(!window.U9_USER?.refreshToken)return;
@@ -3289,6 +3501,9 @@ function u9SwitchTab(tab){
   document.getElementById('u9-pseudo-row').style.display=tab==='register'?'block':'none';
   document.getElementById('u9-auth-btn').textContent=tab==='login'?'Se connecter':'Créer le compte';
   document.getElementById('u9-err').textContent='';
+  document.getElementById('u9-err').style.color='';
+  const fp=document.getElementById('u9-forgot-link');
+  if(fp)fp.style.display=tab==='login'?'block':'none';
 }
 
 async function u9DoAuth(){
@@ -3298,6 +3513,7 @@ async function u9DoAuth(){
   const pseudo=document.getElementById('u9-pseudo').value.trim();
   const errEl=document.getElementById('u9-err');
   errEl.textContent='';
+  errEl.style.color='';
   if(!email||!pwd){errEl.textContent='Email et mot de passe requis.';return;}
   if(isReg&&!pseudo){errEl.textContent='Choisis un pseudo.';return;}
   document.getElementById('u9-auth-btn').textContent='...';
@@ -3320,6 +3536,34 @@ async function u9DoAuth(){
   }catch(e){errEl.textContent='Erreur réseau. Réessayez.';document.getElementById('u9-auth-btn').textContent=isReg?'Créer le compte':'Se connecter';}
 }
 
+async function u9ForgotPassword(){
+  const email=document.getElementById('u9-email').value.trim();
+  const errEl=document.getElementById('u9-err');
+  if(!email){errEl.style.color='#fca5a5';errEl.textContent='Entre ton email ci-dessus d\'abord.';return;}
+  const link=document.getElementById('u9-forgot-link');
+  const original=link.textContent;
+  link.textContent='Envoi en cours...';
+  try{
+    const r=await fetch(`${U9_AUTH_URL}:sendOobCode?key=${U9_KEY}`,{
+      method:'POST',
+      body:JSON.stringify({requestType:'PASSWORD_RESET',email}),
+      headers:{'Content-Type':'application/json'}
+    });
+    const d=await r.json();
+    if(d.error){
+      errEl.style.color='#fca5a5';
+      errEl.textContent=d.error.message==='EMAIL_NOT_FOUND'?'Aucun compte avec cet email.':u9TranslateErr(d.error.message);
+    }else{
+      errEl.style.color='#86efac';
+      errEl.textContent='Email envoyé ! Vérifie ta boîte de réception.';
+    }
+  }catch(e){
+    errEl.style.color='#fca5a5';
+    errEl.textContent='Erreur réseau. Réessaie.';
+  }
+  link.textContent=original;
+}
+
 function u9TranslateErr(msg){
   const m={'EMAIL_NOT_FOUND':'Email introuvable.','INVALID_PASSWORD':'Mot de passe incorrect.','EMAIL_EXISTS':'Email déjà utilisé.',
     'WEAK_PASSWORD : Password should be at least 6 characters':'Mot de passe trop court (min 6 car.).','INVALID_EMAIL':'Email invalide.',
@@ -3336,6 +3580,7 @@ function u9OnLoggedIn(){
   document.getElementById('u9-friends-btn').style.display='block';
   u9LoadFriends();
   u9UpdateOnlineStatus();
+  _u9CleanOldRooms(); // nettoyage des salles fantômes au login
   if(!_u9OnlineInterval)_u9OnlineInterval=setInterval(u9UpdateOnlineStatus,60000);
   if(window._u9FcmToken)u9UpdateFcmToken(window._u9FcmToken);
   u9EnsureToken();
