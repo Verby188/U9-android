@@ -18,6 +18,31 @@ import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.android.play.core.review.ReviewManagerFactory
+import android.app.Activity
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
+
+/** Interface exposée au JS pour déclencher la notation in-app. */
+class AndroidBridge(private val activity: MainActivity) {
+    @android.webkit.JavascriptInterface
+    fun requestReview() {
+        activity.runOnUiThread {
+            activity.showInAppReview()
+        }
+    }
+
+    @android.webkit.JavascriptInterface
+    fun completeUpdate() {
+        activity.runOnUiThread {
+            activity.appUpdateManager.completeUpdate()
+        }
+    }
+}
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,6 +50,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adView: AdView
     private var pendingCode: String? = null
     private var pendingNotifData: String? = null
+
+    // ── Mises à jour in-app (flexible) ──
+    val appUpdateManager by lazy { AppUpdateManagerFactory.create(this) }
+    private val UPDATE_REQUEST_CODE = 1234
+    private val installStateListener = InstallStateUpdatedListener { state ->
+        if (state.installStatus() == InstallStatus.DOWNLOADED) {
+            // Téléchargée : prévenir le JS pour afficher la bannière « Redémarrer »
+            webView.post {
+                webView.evaluateJavascript(
+                    "if(typeof onUpdateReady==='function')onUpdateReady();", null
+                )
+            }
+        }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,6 +147,8 @@ class MainActivity : AppCompatActivity() {
             loadWithOverviewMode = true
         }
 
+        webView.addJavascriptInterface(AndroidBridge(this), "Android")
+
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest) {
                 request.grant(request.resources)
@@ -156,6 +197,7 @@ class MainActivity : AppCompatActivity() {
         adView.loadAd(AdRequest.Builder().build())
 
         handleIntent(intent)
+        checkForUpdate()
     }
 
     private fun getFcmTokenAndInject() {
@@ -250,12 +292,63 @@ class MainActivity : AppCompatActivity() {
         injectNotification("{$json}")
     }
 
+    // ── Mises à jour in-app ──
+    private fun checkForUpdate() {
+        appUpdateManager.registerListener(installStateListener)
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+            ) {
+                appUpdateManager.startUpdateFlowForResult(
+                    info,
+                    this,
+                    AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build(),
+                    UPDATE_REQUEST_CODE
+                )
+            }
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == UPDATE_REQUEST_CODE && resultCode != Activity.RESULT_OK) {
+            // L'utilisateur a refusé/annulé — on réessaiera au prochain lancement
+        }
+    }
+
+    // Notation in-app (Google Play In-App Review API)
+    fun showInAppReview() {
+        val reviewManager = ReviewManagerFactory.create(this)
+        reviewManager.requestReviewFlow().addOnCompleteListener { request ->
+            if (request.isSuccessful) {
+                reviewManager.launchReviewFlow(this, request.result)
+            }
+        }
+    }
+
     override fun onBackPressed() {
         if (webView.canGoBack()) webView.goBack()
         else super.onBackPressed()
     }
 
-    override fun onResume() { super.onResume(); webView.onResume(); adView.resume() }
+    override fun onResume() {
+        super.onResume(); webView.onResume(); adView.resume()
+        // Si une mise à jour a fini de télécharger en arrière-plan
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.installStatus() == InstallStatus.DOWNLOADED) {
+                webView.post {
+                    webView.evaluateJavascript(
+                        "if(typeof onUpdateReady==='function')onUpdateReady();", null
+                    )
+                }
+            }
+        }
+    }
     override fun onPause() { super.onPause(); webView.onPause(); adView.pause() }
-    override fun onDestroy() { super.onDestroy(); adView.destroy() }
+    override fun onDestroy() {
+        super.onDestroy()
+        appUpdateManager.unregisterListener(installStateListener)
+        adView.destroy()
+    }
 }
