@@ -61,6 +61,10 @@
 #u9-wn-modal{position:fixed;inset:0;z-index:8700;background:rgba(0,0,0,.85);
   display:none;align-items:center;justify-content:center;padding:1.2rem}
 #u9-wn-modal.show{display:flex}
+/* Masquer les boutons flottants pendant une partie */
+body.u9-playing #u9-friends-btn,
+body.u9-playing #u9-leaderboard-btn,
+body.u9-playing #u9-profile-badge{display:none !important}
 .u9-lb-sort{flex:1;padding:.4rem;border-radius:8px;border:1px solid rgba(255,255,255,.12);
   background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-size:.68rem;font-weight:700;cursor:pointer}
 .u9-lb-sort.active{border-color:#e8c84a;background:rgba(232,200,74,.18);color:#e8c84a}
@@ -1302,6 +1306,7 @@ function GameOverScreen({
   elim,
   players,
   onRestart,
+  onMenu,
   isHost,
   mode
 }) {
@@ -1377,7 +1382,20 @@ function GameOverScreen({
       padding: "15px 36px",
       fontSize: 15
     }
-  }, "\uD83D\uDD04 Nouvelle partie"));
+  }, "\uD83D\uDD04 Nouvelle partie"), /*#__PURE__*/React.createElement("button", {
+    onClick: onMenu,
+    style: {
+      marginTop: 14,
+      padding: "12px 30px",
+      fontSize: 14,
+      fontWeight: 700,
+      background: "rgba(255,255,255,0.08)",
+      border: "1px solid rgba(255,255,255,0.15)",
+      borderRadius: 12,
+      color: "#cbd5e1",
+      cursor: "pointer"
+    }
+  }, "\uD83C\uDFE0 Retour au menu"));
 }
 function GameBoard({
   myName,
@@ -1407,7 +1425,8 @@ function GameBoard({
   showRules,
   setShowRules,
   showYourTurn,
-  timerInfo
+  timerInfo,
+  onQuit
 }) {
   const logEnd = useRef(null);
   useEffect(() => {
@@ -1467,7 +1486,18 @@ function GameBoard({
       cursor: "pointer",
       padding: "3px 7px"
     }
-  }, "\uD83D\uDCD6")), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDCD6"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => { if (onQuit && window.confirm("Quitter la partie et revenir au menu ?")) onQuit(); },
+    style: {
+      background: "rgba(239,68,68,0.15)",
+      border: "1px solid rgba(239,68,68,0.3)",
+      borderRadius: 8,
+      color: "#fca5a5",
+      fontSize: 12,
+      cursor: "pointer",
+      padding: "3px 8px"
+    }
+  }, "\u2715 Quitter")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -2239,6 +2269,7 @@ function AIGame({
       setLog(["🎴 Nouvelle partie !"]);
       setScreen("game");
     },
+    onMenu: onQuit,
     isHost: true,
     mode: "ai"
   });
@@ -2286,7 +2317,8 @@ function AIGame({
     showRules: showRules,
     setShowRules: setShowRules,
     showYourTurn: showYourTurn,
-    timerInfo: null
+    timerInfo: null,
+    onQuit: onQuit
   });
 }
 
@@ -3005,6 +3037,7 @@ function MultiGame({
         });
         setLog([]);
       },
+      onMenu: onQuit,
       isHost: isHost,
       mode: "multi"
     });
@@ -3078,7 +3111,8 @@ function MultiGame({
       remaining,
       color: timerColor,
       pct: remaining / 30 * 100
-    }
+    },
+    onQuit: onQuit
   });
 }
 
@@ -3093,6 +3127,11 @@ function App() {
   const [nameError, setNameError] = useState(false);
   // Exposer setMode globalement pour navigation externe
   useEffect(() => { window._u9SetMode = setMode; return ()=>{window._u9SetMode=null;}; });
+  // Masquer les boutons flottants (amis/classement/profil) hors du menu d'accueil
+  useEffect(() => {
+    document.body.classList.toggle("u9-playing", mode !== "home");
+    return () => document.body.classList.remove("u9-playing");
+  }, [mode]);
   // Permet au configurateur de couleurs de forcer un re-render des cartes
   const [,_u9cv] = useState(0);
   useEffect(() => { window._u9RefreshColors = () => _u9cv(v => v + 1); return () => { window._u9RefreshColors = null; }; });
