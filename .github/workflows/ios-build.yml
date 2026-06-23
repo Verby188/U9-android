@@ -1,0 +1,28 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ios-app/**'
+
+jobs:
+  build-ios:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - working-directory: ios-app
+        run: npm install
+      - working-directory: ios-app
+        run: npx cap sync ios
+      - working-directory: ios-app/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj \
+            -scheme App -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build
