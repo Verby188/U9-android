@@ -18,7 +18,7 @@
 
   // Passe à true UNIQUEMENT pour tester l'affichage avec les pubs de test Google.
   // En production : false (sinon AdMob ne comptabilise pas les vraies impressions).
-  var IS_TESTING = true;
+  var IS_TESTING = false;
 
   var interstitialReady = false;
   var lastInterstitialAt = 0;
