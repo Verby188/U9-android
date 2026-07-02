@@ -831,6 +831,7 @@ function getCtx() {
   return _audioCtx;
 }
 function playTone(freq, duration, type = "sine", vol = 0.3, delay = 0) {
+    if (window.U9_SOUND_ON === false) return;
   try {
     const ctx = getCtx();
     const osc = ctx.createOscillator();
@@ -3482,6 +3483,27 @@ function App() {
     btn.id = "u9-color-btn"; btn.title = "Couleurs des cartes";
     btn.textContent = "🎨"; btn.onclick = window.u9OpenColors;
     document.body.appendChild(btn);
+
+    // --- Bouton Son (toggle) ---
+    try {
+      window.U9_SOUND_ON = (localStorage.getItem('u9_sound') !== 'off');
+    } catch(e) { window.U9_SOUND_ON = true; }
+    var sbtn = document.createElement("button");
+    sbtn.id = "u9-sound-btn";
+    sbtn.title = "Son";
+    sbtn.textContent = window.U9_SOUND_ON ? "\uD83D\uDD0A" : "\uD83D\uDD07";
+    sbtn.onclick = function () {
+      window.U9_SOUND_ON = !window.U9_SOUND_ON;
+      try { localStorage.setItem('u9_sound', window.U9_SOUND_ON ? 'on' : 'off'); } catch(e) {}
+      sbtn.textContent = window.U9_SOUND_ON ? "\uD83D\uDD0A" : "\uD83D\uDD07";
+      if (window.U9_SOUND_ON && typeof playTone === 'function') playTone(660, 0.08);
+    };
+    document.body.appendChild(sbtn);
+    (function(){
+      var st = document.createElement("style");
+      st.textContent = "#u9-sound-btn{position:fixed;right:12px;bottom:64px;z-index:9999;width:40px;height:40px;border-radius:50%;border:none;background:rgba(20,30,50,.85);color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:0}";
+      document.head.appendChild(st);
+    })();
 
     const modal = document.createElement("div");
     modal.id = "u9-color-modal";
