@@ -133,9 +133,31 @@
   }
 
   // --- Démarrage ---
+    // --- Hauteur de banniere (evite le recouvrement des cartes/boutons) ---
+  function setAdHeight(px){
+    var h = (px && px > 0) ? px : 0;
+    document.documentElement.style.setProperty('--u9-ad-h', h + 'px');
+  }
+  function setupAdHeight(){
+    if (!isIOS()) return;
+    try {
+      var P = Capacitor.Plugins.AdMob;
+      P.addListener('bannerAdSizeChanged', function(info){
+        var h = info && (info.height != null ? info.height : (info.size && info.size.height));
+        if (h && h > 0) setAdHeight(h);
+      });
+    } catch(e){}
+    // Repli : reserve une hauteur standard si l'evenement ne se declenche pas
+    setTimeout(function(){
+      var cur = getComputedStyle(document.documentElement).getPropertyValue('--u9-ad-h').trim();
+      if (!cur || cur === '0px') setAdHeight(60);
+    }, 3000);
+  }
+
   function start() {
     if (!isIOS()) return; // sortie immédiate sur Android / web
     initAdMob();
+    setupAdHeight();
     watchGameOver();
   }
 

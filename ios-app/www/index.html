@@ -1487,7 +1487,7 @@ function GameBoard({
       padding: "3px 7px"
     }
   }, "\uD83D\uDCD6"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => { if (onQuit && window.confirm("Quitter la partie et revenir au menu ?")) { if(window.U9_showInterstitial) window.U9_showInterstitial(); onQuit(); } },
+    onClick: () => { if (onQuit && window.confirm("Quitter la partie et revenir au menu ?")) onQuit(); },
     style: {
       background: "rgba(239,68,68,0.15)",
       border: "1px solid rgba(239,68,68,0.3)",
@@ -1825,7 +1825,7 @@ function GameBoard({
   })))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "10px 12px",
-      paddingBottom: "max(12px,env(safe-area-inset-bottom,12px))",
+      paddingBottom: "calc(max(12px,env(safe-area-inset-bottom,12px)) + var(--u9-ad-h, 0px))",
       background: "#e2e8f0",
       flexShrink: 0,
       borderTop: "1px solid #cbd5e1"
