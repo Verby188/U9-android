@@ -70,7 +70,7 @@ body.u9-playing #u9-profile-badge{display:none !important}
 .u9-lb-sort.active{border-color:#e8c84a;background:rgba(232,200,74,.18);color:#e8c84a}
 
 /* ══ COLOR BTN & MODAL ══ */
-#u9-color-btn{position:fixed;bottom:.9rem;right:.7rem;z-index:8000;
+#u9-color-btn{position:fixed;bottom:calc(.9rem + var(--u9-ad-h, 0px));right:.7rem;z-index:8000;
   background:rgba(15,23,42,.85);border:1px solid rgba(232,200,74,.25);border-radius:20px;
   padding:.35rem .7rem;cursor:pointer;font-size:.85rem;color:#e8c84a;backdrop-filter:blur(6px)}
 #u9-color-modal{position:fixed;inset:0;z-index:8600;background:rgba(0,0,0,.8);
@@ -724,7 +724,7 @@ function resolveU9local(game, pIdx) {
     scores[pIdx] += 25;
     roundGains[pIdx].gain = 25;
     roundGains[pIdx].situation = "error";
-    msgs.push(`💥 Erreur ! main=${hv} pts → +25 !`);
+    msgs.push(`💥 ${u9T("Erreur ! main=")}${hv}${u9T(" pts → +25 !")}`);
   } else {
     const contra = game.players.findIndex((pl, i) => i !== pIdx && !elim[i] && handValue(pl.hand) <= hv);
     if (contra >= 0) {
@@ -732,10 +732,10 @@ function resolveU9local(game, pIdx) {
       roundGains[pIdx].gain = 25;
       roundGains[pIdx].situation = "countered";
       roundGains[contra].situation = "counter";
-      msgs.push(`⚔️ U9 Contré par ${game.players[contra].name} !`);
+      msgs.push(`⚔️ ${u9T("U9 Contré par ")}${game.players[contra].name} !`);
     } else {
       roundGains[pIdx].situation = "winner";
-      msgs.push(`🏆 U9 Gagnant !`);
+      msgs.push(`🏆 ${u9T("U9 Gagnant")} !`);
       game.players.forEach((pl, i) => {
         if (i !== pIdx && !elim[i]) {
           const v = handValue(pl.hand);
@@ -781,7 +781,7 @@ function resolveU9firebase(game, order, pIdx) {
     scores[pIdx] += 25;
     roundGains[pIdx].gain = 25;
     roundGains[pIdx].situation = "error";
-    msgs.push(`💥 Erreur ! main=${hv} → +25 !`);
+    msgs.push(`💥 ${u9T("Erreur ! main=")}${hv}${u9T(" → +25 !")}`);
   } else {
     const contra = order.findIndex((id, i) => i !== pIdx && !elim[i] && handValue(arr(game.hands[id] || [])) <= hv);
     if (contra >= 0) {
@@ -789,10 +789,10 @@ function resolveU9firebase(game, order, pIdx) {
       roundGains[pIdx].gain = 25;
       roundGains[pIdx].situation = "countered";
       roundGains[contra].situation = "counter";
-      msgs.push(`⚔️ U9 Contré !`);
+      msgs.push(`⚔️ ${u9T("U9 Contré")} !`);
     } else {
       roundGains[pIdx].situation = "winner";
-      msgs.push(`🏆 U9 Gagnant !`);
+      msgs.push(`🏆 ${u9T("U9 Gagnant")} !`);
       order.forEach((id, i) => {
         if (i !== pIdx && !elim[i]) {
           const v = handValue(arr(game.hands[id] || []));
@@ -931,7 +931,7 @@ function Card({
       fontSize: 8,
       fontWeight: 900
     }
-  }, "JOKER"), /*#__PURE__*/React.createElement("div", {
+  }, (window.u9T ? window.u9T("JOKER") : "JOKER")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 22,
       lineHeight: 1.1
@@ -1488,7 +1488,7 @@ function GameBoard({
       padding: "3px 7px"
     }
   }, "\uD83D\uDCD6"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => { if (onQuit && window.confirm("Quitter la partie et revenir au menu ?")) onQuit(); },
+    onClick: () => { if (onQuit && window.confirm(window.u9T ? window.u9T("Quitter la partie et revenir au menu ?") : "Quitter la partie et revenir au menu ?")) onQuit(); },
     style: {
       background: "rgba(239,68,68,0.15)",
       border: "1px solid rgba(239,68,68,0.3)",
@@ -1520,7 +1520,7 @@ function GameBoard({
       fontWeight: 900,
       color: myScore >= 80 ? "#f87171" : myScore >= 50 ? "#fb923c" : "#94a3b8"
     }
-  }, myScore, " pts")), /*#__PURE__*/React.createElement("div", {
+  }, myScore, " " + (window.u9T ? window.u9T("pts") : "pts"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -2008,7 +2008,7 @@ function AIGame({
       if (hv <= 9) {
         const countered = g.players.some((pl, i) => i !== aiIdx && !g.elim[i] && handValue(pl.hand) <= hv);
         if (!countered) {
-          addLog(`🎯 ${ai.name} annonce U9 ! (${hv} pts)`);
+          addLog(`🎯 ${ai.name} ${u9T("annonce U9 ! (")}${hv}${u9T(" pts)")}`);
           const {
             scores,
             elim,
@@ -2065,7 +2065,7 @@ function AIGame({
         }
       });
       if (!best) best = [ai.hand.find(c => c.rank !== "JOKER") || ai.hand[0]];
-      addLog(`${ai.name} pose : ${best.map(c => c.rank === "JOKER" ? "✦" : `${c.rank}${SYM[c.suit]}`).join(" ")}`);
+      addLog(`${ai.name} ${u9T("pose : ")}${best.map(c => c.rank === "JOKER" ? "✦" : `${c.rank}${SYM[c.suit]}`).join(" ")}`);
       // do play
       const prevDiscard = g.discard[0] ?? null;
       const remaining = ai.hand.filter(c => !best.map(b => b.id).includes(c.id));
@@ -2100,7 +2100,7 @@ function AIGame({
         deck = deck.slice(1);
       }
       if (drawn) {
-        addLog(`${ai.name} pioche${fromD ? ` ${drawn.rank}${SYM[drawn.suit]}` : " une carte"}.`);
+        addLog(`${ai.name} ${u9T("pioche")}${fromD ? ` ${drawn.rank}${SYM[drawn.suit]}` : " " + u9T("une carte")}.`);
         ng = {
           ...ng,
           players: ng.players.map((p, i) => i === aiIdx ? {
@@ -2136,7 +2136,7 @@ function AIGame({
   const humanPlay = () => {
     const cards = game.players[0].hand.filter(c => sel.includes(c.id));
     if (!isValidPlay(cards)) return;
-    addLog(`Tu poses : ${cards.map(c => c.rank === "JOKER" ? "✦Joker" : `${c.rank}${SYM[c.suit]}`).join(", ")}`);
+    addLog(`${u9T("Tu poses : ")}${cards.map(c => c.rank === "JOKER" ? ("✦" + (window.u9T ? window.u9T("Joker") : "Joker")) : `${c.rank}${SYM[c.suit]}`).join(", ")}`);
     const prevDiscard = game.discard[0] ?? null;
     const remaining = game.players[0].hand.filter(c => !sel.includes(c.id));
     const jokers = cards.filter(c => c.rank === "JOKER");
@@ -2172,7 +2172,7 @@ function AIGame({
       deck = deck.slice(1);
     }
     if (!drawn) return;
-    addLog(`📥 Tu pioches : ${drawn.rank === "JOKER" ? "✦Joker" : `${drawn.rank}${SYM[drawn.suit]}`}`);
+    addLog(`📥 ${u9T("Tu pioches : ")}${drawn.rank === "JOKER" ? ("✦" + (window.u9T ? window.u9T("Joker") : "Joker")) : `${drawn.rank}${SYM[drawn.suit]}`}`);
     const n = game.players.length;
     let next = 1 % n;
     let tries = 0;
@@ -2195,7 +2195,7 @@ function AIGame({
     }));
   };
   const humanU9 = () => {
-    addLog(`🎯 Tu annonces U9 ! (${handValue(game.players[0].hand)} pts)`);
+    addLog(`🎯 ${u9T("Tu annonces U9 ! (")}${handValue(game.players[0].hand)}${u9T(" pts)")}`);
     const {
       scores,
       elim,
@@ -2472,7 +2472,7 @@ function MultiGame({
       const remaining = myHand.slice(1);
       const newDiscard = card.rank === "JOKER" ? [...arr(game.discard || []), card] : [card, ...arr(game.discard || [])];
       const pname = room.players?.[pid.current]?.name || "?";
-      const newLog = [...arr(game.log || []), `⏱️ ${pname} pose automatiquement.`].slice(-20);
+      const newLog = [...arr(game.log || []), `⏱️ ${pname} ${u9T("pose automatiquement.")}`].slice(-20);
       const u = {};
       u[`game/hands/${pid.current}`] = remaining;
       u["game/discard"] = newDiscard;
@@ -2492,7 +2492,7 @@ function MultiGame({
       if (drawn) deck = deck.slice(1);
       const myHand = drawn ? [...arr(game.hands?.[pid.current] || []), drawn] : arr(game.hands?.[pid.current] || []);
       const pname = room.players?.[pid.current]?.name || "?";
-      const newLog = [...arr(game.log || []), `⏱️ ${pname} pioche automatiquement.`].slice(-20);
+      const newLog = [...arr(game.log || []), `⏱️ ${pname} ${u9T("pioche automatiquement.")}`].slice(-20);
       const n = order.length;
       let next = (game.current + 1) % n;
       let tries = 0;
@@ -2614,8 +2614,8 @@ function MultiGame({
     const nonJ = cards.filter(c => c.rank !== "JOKER");
     const newDiscard = [...nonJ, ...arr(game.discard || []), ...jokers];
     const pname = room.players?.[pid.current]?.name || "?";
-    const ps = cards.map(c => c.rank === "JOKER" ? "✦Joker" : `${c.rank}${SYM[c.suit]}`).join(", ");
-    const newLog = [...arr(game.log || []), `${pname} pose : ${ps}`].slice(-20);
+    const ps = cards.map(c => c.rank === "JOKER" ? ("✦" + (window.u9T ? window.u9T("Joker") : "Joker")) : `${c.rank}${SYM[c.suit]}`).join(", ");
+    const newLog = [...arr(game.log || []), `${pname} ${u9T("pose : ")}${ps}`].slice(-20);
     const u = {};
     u[`game/hands/${pid.current}`] = remaining;
     u["game/discard"] = newDiscard;
@@ -2653,7 +2653,7 @@ function MultiGame({
       next = (next + 1) % n;
       tries++;
     }
-    const newLog = [...arr(game.log || []), `${pname} pioche${fromDiscard ? ` ${drawn.rank}${drawn.suit === "joker" ? "✦" : SYM[drawn.suit]}` : " une carte"}.`].slice(-20);
+    const newLog = [...arr(game.log || []), `${pname} ${u9T("pioche")}${fromDiscard ? ` ${drawn.rank}${drawn.suit === "joker" ? "✦" : SYM[drawn.suit]}` : " " + u9T("une carte")}.`].slice(-20);
     const u = {};
     u[`game/hands/${pid.current}`] = myHand;
     u["game/deck"] = deck;
@@ -2678,7 +2678,7 @@ function MultiGame({
       announcerHand,
       gameOver
     } = resolveU9firebase(game, order, game.current);
-    const newLog = [...arr(game.log || []), `🎯 ${pname} annonce U9 ! (${hv} pts)`, ...msgs].slice(-20);
+    const newLog = [...arr(game.log || []), `🎯 ${pname} ${u9T("annonce U9 ! (")}${hv}${u9T(" pts)")}`, ...msgs].slice(-20);
     const u = {};
     u["game/scores"] = scores;
     u["game/elim"] = elim;
@@ -3501,7 +3501,7 @@ function App() {
     document.body.appendChild(sbtn);
     (function(){
       var st = document.createElement("style");
-      st.textContent = "#u9-sound-btn{position:fixed;right:12px;bottom:64px;z-index:9999;width:40px;height:40px;border-radius:50%;border:none;background:rgba(20,30,50,.85);color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:0}";
+      st.textContent = "#u9-sound-btn{position:fixed;right:12px;bottom:calc(64px + var(--u9-ad-h, 0px));z-index:9999;width:40px;height:40px;border-radius:50%;border:none;background:rgba(20,30,50,.85);color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:0}";
       document.head.appendChild(st);
     })();
 
@@ -3842,10 +3842,12 @@ async function u9ForgotPassword(){
   const original=link.textContent;
   link.textContent='Envoi en cours...';
   try{
+    let u9Locale='fr';
+    try{ u9Locale=localStorage.getItem('u9_lang')||'fr'; }catch(e){}
     const r=await fetch(`${U9_AUTH_URL}:sendOobCode?key=${U9_KEY}`,{
       method:'POST',
       body:JSON.stringify({requestType:'PASSWORD_RESET',email}),
-      headers:{'Content-Type':'application/json'}
+      headers:{'Content-Type':'application/json','X-Firebase-Locale':u9Locale}
     });
     const d=await r.json();
     if(d.error){
