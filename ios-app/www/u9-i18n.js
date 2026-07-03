@@ -6,6 +6,67 @@ window.__U9_LANGS__ = {"Jeu de cartes": {"en": "Card game", "it": "Gioco di cart
   // et on reapplique apres chaque mutation.
 
   var LANGS = window.__U9_LANGS__ || {};   // injecte separement
+  // ---- Cles ajoutees (v1.0.1 - couverture ecran de jeu) ----
+  var EXTRA_LANGS = {
+    "cartes": {"en":"cards","it":"carte","es":"cartas","de":"Karten","pt":"cartas"},
+    "Quitter": {"en":"Leave","it":"Esci","es":"Salir","de":"Verlassen","pt":"Sair"},
+    "Partie lancée !": {"en":"Game started!","it":"Partita iniziata!","es":"¡Partida iniciada!","de":"Spiel gestartet!","pt":"Jogo iniciado!"},
+    "Règles du U9": {"en":"U9 Rules","it":"Regole U9","es":"Reglas U9","de":"U9-Regeln","pt":"Regras U9"},
+    "pts": {"en":"pts","it":"pti","es":"pts","de":"Pkt","pt":"pts"},
+    "pts)": {"en":"pts)","it":"pti)","es":"pts)","de":"Pkt)","pt":"pts)"},
+    " pts)": {"en":" pts)","it":" pti)","es":" pts)","de":" Pkt)","pt":" pts)"},
+    "pose : ": {"en":"plays: ","it":"cala: ","es":"pone: ","de":"legt: ","pt":"baixa: "},
+    "pioche": {"en":"draws","it":"pesca","es":"roba","de":"zieht","pt":"tira"},
+    "une carte": {"en":"a card","it":"una carta","es":"una carta","de":"eine Karte","pt":"uma carta"},
+    "Tu poses : ": {"en":"You play: ","it":"Tu cali: ","es":"Pones: ","de":"Du legst: ","pt":"Tu baixas: "},
+    "Tu pioches : ": {"en":"You draw: ","it":"Tu peschi: ","es":"Robas: ","de":"Du ziehst: ","pt":"Tu tiras: "},
+    "annonce U9 ! (": {"en":"announces U9! (","it":"annuncia U9! (","es":"canta U9! (","de":"sagt U9 an! (","pt":"anuncia U9! ("},
+    "Tu annonces U9 ! (": {"en":"You call U9! (","it":"Tu annunci U9! (","es":"¡Cantas U9! (","de":"Du sagst U9 an! (","pt":"Anuncias U9! ("},
+    "Erreur ! main=": {"en":"Error! hand=","it":"Errore! mano=","es":"¡Error! mano=","de":"Fehler! Hand=","pt":"Erro! mão="},
+    " pts → +25 !": {"en":" pts → +25!","it":" pti → +25!","es":" pts → +25!","de":" Pkt → +25!","pt":" pts → +25!"},
+    " → +25 !": {"en":" → +25!","it":" → +25!","es":" → +25!","de":" → +25!","pt":" → +25!"},
+    "U9 Contré par ": {"en":"U9 Countered by ","it":"U9 Contrato da ","es":"U9 Contrado por ","de":"U9 gekontert von ","pt":"U9 Contrariado por "}
+  };
+  for (var __k in EXTRA_LANGS) { if (EXTRA_LANGS.hasOwnProperty(__k)) LANGS[__k] = EXTRA_LANGS[__k]; }
+  var EXTRA_LANGS_2 = {
+    "Objectif": {"en":"Objective","it":"Obiettivo","es":"Objetivo","de":"Ziel","pt":"Objetivo"},
+    "Valeur des cartes": {"en":"Card values","it":"Valore delle carte","es":"Valor de las cartas","de":"Kartenwerte","pt":"Valor das cartas"},
+    "Tour": {"en":"Turn","it":"Turno","es":"Turno","de":"Zug","pt":"Turno"},
+    "Annoncer U9": {"en":"Calling U9","it":"Annunciare U9","es":"Cantar U9","de":"U9 ansagen","pt":"Anunciar U9"},
+    "Contre": {"en":"Counter","it":"Contro","es":"Contra","de":"Konter","pt":"Contra"},
+    "Élimination": {"en":"Elimination","it":"Eliminazione","es":"Eliminación","de":"Elimination","pt":"Eliminação"},
+    "Timer (multi)": {"en":"Timer (multiplayer)","it":"Timer (multi)","es":"Temporizador (multi)","de":"Timer (Mehrspieler)","pt":"Temporizador (multi)"},
+    "30 secondes max par tour en multijoueur.": {"en":"30 seconds max per turn in multiplayer.","it":"30 secondi max a turno in multigiocatore.","es":"30 segundos máx. por turno en multijugador.","de":"Max. 30 Sekunden pro Zug im Mehrspielermodus.","pt":"30 segundos máx. por turno em multijogador."},
+    "UNDER 9 — Stratégie & Psychologie": {"en":"UNDER 9 — Strategy & Psychology","it":"UNDER 9 — Strategia e Psicologia","es":"UNDER 9 — Estrategia y Psicología","de":"UNDER 9 — Strategie & Psychologie","pt":"UNDER 9 — Estratégia e Psicologia"},
+    "Connexion": {"en":"Log in","it":"Accedi","es":"Iniciar sesión","de":"Anmelden","pt":"Entrar"},
+    "Connexion perdue": {"en":"Connection lost","it":"Connessione persa","es":"Conexión perdida","de":"Verbindung verloren","pt":"Ligação perdida"},
+    "Inscription": {"en":"Sign up","it":"Registrati","es":"Registrarse","de":"Registrieren","pt":"Registar"},
+    "Mot de passe oublié ?": {"en":"Forgot password?","it":"Password dimenticata?","es":"¿Olvidaste tu contraseña?","de":"Passwort vergessen?","pt":"Esqueceste a palavra-passe?"},
+    "Continuer sans compte": {"en":"Continue without account","it":"Continua senza account","es":"Continuar sin cuenta","de":"Ohne Konto fortfahren","pt":"Continuar sem conta"},
+    "Email": {"en":"Email","it":"Email","es":"Correo electrónico","de":"E-Mail","pt":"E-mail"}
+  };
+  for (var __k2 in EXTRA_LANGS_2) { if (EXTRA_LANGS_2.hasOwnProperty(__k2)) LANGS[__k2] = EXTRA_LANGS_2[__k2]; }
+  var EXTRA_LANGS_3 = {
+    "Lancer la partie": {"en":"Start the game","it":"Avvia la partita","es":"Iniciar la partida","de":"Spiel starten","pt":"Iniciar o jogo"},
+    "Retour": {"en":"Back","it":"Indietro","es":"Volver","de":"Zurück","pt":"Voltar"},
+    "Tour de ": {"en":"Turn of ","it":"Turno di ","es":"Turno de ","de":"Zug von ","pt":"Turno de "},
+    "Pioche (": {"en":"Draw (","it":"Mazzo (","es":"Robar (","de":"Nachziehen (","pt":"Baralho ("},
+    "Nouveau tour": {"en":"New round","it":"Nuovo turno","es":"Nueva ronda","de":"Neue Runde","pt":"Nova rodada"},
+    "Nouvelle partie": {"en":"New game","it":"Nuova partita","es":"Nueva partida","de":"Neues Spiel","pt":"Novo jogo"},
+    "Nouveau tour !": {"en":"New round!","it":"Nuovo turno!","es":"¡Nueva ronda!","de":"Neue Runde!","pt":"Nova rodada!"},
+    "Nouvelle partie !": {"en":"New game!","it":"Nuova partita!","es":"¡Nueva partida!","de":"Neues Spiel!","pt":"Novo jogo!"},
+    "Retour au menu": {"en":"Back to menu","it":"Torna al menu","es":"Volver al menú","de":"Zurück zum Menü","pt":"Voltar ao menu"},
+    "remporte la victoire !": {"en":"wins the game!","it":"vince la partita!","es":"¡gana la partida!","de":"gewinnt das Spiel!","pt":"vence o jogo!"},
+    "main=": {"en":"hand=","it":"mano=","es":"mano=","de":"Hand=","pt":"mão="},
+    "pose automatiquement.": {"en":"plays automatically.","it":"cala automaticamente.","es":"pone automáticamente.","de":"legt automatisch.","pt":"baixa automaticamente."},
+    "pioche automatiquement.": {"en":"draws automatically.","it":"pesca automaticamente.","es":"roba automáticamente.","de":"zieht automatisch.","pt":"tira automaticamente."},
+    "JOKER": {"en":"JOKER","it":"JOLLY","es":"COMODÍN","de":"JOKER","pt":"JOKER"},
+    "Joker": {"en":"Joker","it":"Jolly","es":"Comodín","de":"Joker","pt":"Joker"}
+  };
+  for (var __k3 in EXTRA_LANGS_3) { if (EXTRA_LANGS_3.hasOwnProperty(__k3)) LANGS[__k3] = EXTRA_LANGS_3[__k3]; }
+
+
+
   var LANG_NAMES = {fr:"Français",en:"English",it:"Italiano",es:"Español",de:"Deutsch",pt:"Português"};
   var LANG_FLAGS = {fr:"🇫🇷",en:"🇬🇧",it:"🇮🇹",es:"🇪🇸",de:"🇩🇪",pt:"🇵🇹"};
   var ORDER = ["fr","en","it","es","de","pt"];
@@ -28,6 +89,35 @@ window.__U9_LANGS__ = {"Jeu de cartes": {"en": "Card game", "it": "Gioco di cart
     return null;
   }
 
+  // Detecte un prefixe emoji (ex: "🤖 ", "📖 ", "🎯 ") en tete de chaine.
+  var EMOJI_RE = /^((?:[\u2190-\u23FF\u2600-\u27BF\u2B00-\u2BFF]|[\uD800-\uDBFF][\uDC00-\uDFFF])(?:\uFE0F|\u200D(?:[\u2190-\u23FF\u2600-\u27BF\u2B00-\u2BFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]))*)\s*/;
+  function splitEmoji(s){
+    var m = EMOJI_RE.exec(s);
+    if (m) return { prefix: m[0], rest: s.slice(m[0].length) };
+    return { prefix: "", rest: s };
+  }
+
+  // Traduction "large" : cle exacte, sinon on retire un eventuel prefixe emoji et on reessaie.
+  function translateWide(key){
+    var tr = translate(key);
+    if (tr != null) return tr;
+    var sp = splitEmoji(key);
+    if (sp.prefix) {
+      var tr2 = translate(sp.rest.trim());
+      if (tr2 != null) return sp.prefix + tr2;
+    }
+    return null;
+  }
+
+  // Helper global pour traduire des fragments de chaines dynamiques (logs de partie).
+  // Usage : u9T("Tu poses : ") -> retourne le fragment traduit dans la langue active (cle exacte).
+  window.u9T = function(fr){
+    if (!fr) return fr;
+    if (_lang === "fr") return fr;
+    var d = LANGS[fr];
+    return (d && d[_lang]) ? d[_lang] : fr;
+  };
+
   // Applique la traduction a un noeud texte
   function applyNode(node){
     var parent = node.parentNode;
@@ -43,6 +133,16 @@ window.__U9_LANGS__ = {"Jeu de cartes": {"en": "Card game", "it": "Gioco di cart
     var key = (raw||"").trim();
     if (!key) return;
 
+    if (_lang !== "fr") {
+      // 1) essai avec la chaine BRUTE (respecte espaces utiles : "Poser ", "Main de "...)
+      var trRawFirst = translateWide(raw);
+      if (trRawFirst != null) {
+        if (node.__u9_fr__ == null) node.__u9_fr__ = raw;
+        if (node.nodeValue !== trRawFirst) node.nodeValue = trRawFirst;
+        return;
+      }
+    }
+
     if (_lang === "fr") {
       // restaurer l'original si on avait traduit
       if (node.__u9_fr__ != null && node.nodeValue !== node.__u9_fr__) {
@@ -50,7 +150,7 @@ window.__U9_LANGS__ = {"Jeu de cartes": {"en": "Card game", "it": "Gioco di cart
       }
       return;
     }
-    var tr = translate(key);
+    var tr = translateWide(key);
     if (tr != null) {
       if (node.__u9_fr__ == null) node.__u9_fr__ = raw; // memorise l'original
       // preserve les espaces autour (certaines cles finissent par un espace)
@@ -61,6 +161,31 @@ window.__U9_LANGS__ = {"Jeu de cartes": {"en": "Card game", "it": "Gioco di cart
     }
   }
 
+  // Traduit l'attribut placeholder d'un champ (invisible au TreeWalker texte)
+  function applyAttr(el){
+    if (!el || !el.getAttribute) return;
+    var raw = el.__u9_ph_fr__ != null ? el.__u9_ph_fr__ : el.getAttribute("placeholder");
+    var key = (raw||"").trim();
+    if (!key) return;
+    if (_lang === "fr") {
+      if (el.__u9_ph_fr__ != null && el.getAttribute("placeholder") !== el.__u9_ph_fr__) {
+        el.setAttribute("placeholder", el.__u9_ph_fr__);
+      }
+      return;
+    }
+    var tr = translateWide(key);
+    if (tr != null) {
+      if (el.__u9_ph_fr__ == null) el.__u9_ph_fr__ = raw;
+      if (el.getAttribute("placeholder") !== tr) el.setAttribute("placeholder", tr);
+    }
+  }
+
+  function walkAttrs(root){
+    if (!root || !root.querySelectorAll) return;
+    var els = root.querySelectorAll("[placeholder]");
+    for (var i=0;i<els.length;i++) applyAttr(els[i]);
+  }
+
   function walk(root){
     if (!root) return;
     var it = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
@@ -68,6 +193,7 @@ window.__U9_LANGS__ = {"Jeu de cartes": {"en": "Card game", "it": "Gioco di cart
     var batch = [];
     while (n = it.nextNode()) batch.push(n);
     for (var i=0;i<batch.length;i++) applyNode(batch[i]);
+    walkAttrs(root);
   }
 
   var _scheduled = false;
@@ -127,8 +253,8 @@ window.__U9_LANGS__ = {"Jeu de cartes": {"en": "Card game", "it": "Gioco di cart
 
     var st = document.createElement("style");
     st.textContent =
-      "#u9-lang-btn{position:fixed;right:12px;bottom:112px;z-index:9999;width:40px;height:40px;border-radius:50%;border:none;background:rgba(20,30,50,.85);color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:0}" +
-      "#u9-lang-menu{position:fixed;right:12px;bottom:158px;z-index:10000;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:4px;box-shadow:0 4px 16px rgba(0,0,0,.5)}" +
+      "#u9-lang-btn{position:fixed;right:12px;bottom:calc(112px + var(--u9-ad-h, 0px));z-index:9999;width:40px;height:40px;border-radius:50%;border:none;background:rgba(20,30,50,.85);color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:0}" +
+      "#u9-lang-menu{position:fixed;right:12px;bottom:calc(158px + var(--u9-ad-h, 0px));z-index:10000;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:4px;box-shadow:0 4px 16px rgba(0,0,0,.5)}" +
       ".u9-lang-item{padding:8px 14px;color:#fff;font-size:.9rem;cursor:pointer;border-radius:6px;white-space:nowrap}" +
       ".u9-lang-item:hover{background:rgba(255,255,255,.1)}";
     document.head.appendChild(st);
