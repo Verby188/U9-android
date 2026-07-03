@@ -48,7 +48,12 @@ jobs:
           AAB_FILE=$(find "$RELEASE_DIR" -name "*.aab" | head -n 1)
           echo "AAB trouvé : $AAB_FILE"
 
-          echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '\n\r ' | base64 -d -i > release.keystore
+
+          if [ ! -s release.keystore ]; then
+            echo "Erreur : le keystore décodé est vide, vérifie le secret KEYSTORE_BASE64."
+            exit 1
+          fi
 
           jarsigner -verbose \
             -sigalg SHA256withRSA -digestalg SHA-256 \
