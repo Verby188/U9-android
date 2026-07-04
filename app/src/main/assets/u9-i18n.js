@@ -65,6 +65,24 @@ window.__U9_LANGS__ = {"Jeu de cartes": {"en": "Card game", "it": "Gioco di cart
   };
   for (var __k3 in EXTRA_LANGS_3) { if (EXTRA_LANGS_3.hasOwnProperty(__k3)) LANGS[__k3] = EXTRA_LANGS_3[__k3]; }
 
+var EXTRA_LANGS_4 = {
+  "1. Poser une ou plusieurs cartes de même valeur.\n2. Piocher (pioche cachée ou carte visible d'avant ton tour).": {
+    "en": "1. Play one or more cards of the same value.\n2. Draw (hidden pile or the visible card before your turn).",
+    "it": "1. Cala una o più carte dello stesso valore.\n2. Pesca (mazzo coperto o carta visibile prima del tuo turno).",
+    "es": "1. Pon una o más cartas del mismo valor.\n2. Roba (mazo oculto o la carta visible antes de tu turno).",
+    "de": "1. Lege eine oder mehrere Karten mit demselben Wert.\n2. Ziehe (verdeckter Stapel oder die vor deinem Zug sichtbare Karte).",
+    "pt": "1. Baixa uma ou mais cartas do mesmo valor.\n2. Tira (baralho oculto ou a carta visível antes da tua vez)."
+  },
+  "100 pts ou plus = éliminé. Dernier en jeu = vainqueur.": {
+    "en": "100 pts or more = eliminated. Last one standing = winner.",
+    "it": "100 pti o più = eliminato. L'ultimo in gioco vince.",
+    "es": "100 pts o más = eliminado. El último en pie gana.",
+    "de": "100 Pkt oder mehr = eliminiert. Letzter im Spiel gewinnt.",
+    "pt": "100 pts ou mais = eliminado. O último em jogo vence."
+  }
+};
+for (var __k4 in EXTRA_LANGS_4) { if (EXTRA_LANGS_4.hasOwnProperty(__k4)) LANGS[__k4] = EXTRA_LANGS_4[__k4]; }
+
 
 
   var LANG_NAMES = {fr:"Français",en:"English",it:"Italiano",es:"Español",de:"Deutsch",pt:"Português"};
